@@ -40,9 +40,6 @@ static uint32_t NumberOfThreads;
 // Current Number of Periodic Threads currently in the scheduler
 static uint32_t NumberOfPThreads;
 
-// Index of the first dead thread for relinking
-static uint32_t deadThreadIndex;
-
 static char* debugName;
 
 
@@ -243,7 +240,7 @@ sched_ErrCode_t G8RTOS_AddThread(void (*threadToAdd)(void), uint8_t priority, ch
 
     IBit_State = StartCriticalSection();
     
-    // check that num_threads == max_threads {return error code }
+    // check that num_threads == max_threads {return error code}
     if(aliveCount == MAX_THREADS){
         
         // end critical section early and exist function

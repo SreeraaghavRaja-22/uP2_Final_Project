@@ -16,7 +16,6 @@
 
 uint16_t PCA9555_GetInput(uint32_t mod, uint8_t addr) {
     uint8_t data[2];
-    // write to the 
     
     return;
 }
