@@ -90,10 +90,8 @@ void SysTick_Handler() {
     tcb_t* currThread = CurrentlyRunningThread;
     ptcb_t* currPThread = &ptcbs[0];
 
-   
     // loop through all the periodic threads and execute them appropriately (if their time is now)
     do{
-        
         if(SystemTime >= currPThread->executeTime){
             // call the handler (calls the function execution)
             currPThread->handler();
@@ -338,6 +336,7 @@ sched_ErrCode_t G8RTOS_Add_APeriodicEvent(void (*AthreadToAdd)(void), uint8_t pr
 // Param uint32_t "execution": When to execute the periodic thread
 // Return: sched_ErrCode_t
 sched_ErrCode_t G8RTOS_Add_PeriodicEvent(void (*PThreadToAdd)(void), uint32_t period, uint32_t execution) {
+
     if(NumberOfPThreads >= MAX_PTHREADS){
         return THREAD_LIMIT_REACHED;
     }

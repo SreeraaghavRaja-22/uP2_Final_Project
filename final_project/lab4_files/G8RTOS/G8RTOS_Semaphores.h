@@ -26,9 +26,7 @@
 
 // Semaphore typedef
 // your stuff goes here
-typedef struct semaphore_t{
-    int32_t count; 
-}semaphore_t;
+typedef int32_t semaphore_t;
 
 // Semaphore instantiation
 // your stuff goes here

@@ -52,7 +52,7 @@ uint32_t volatile *getPt;
 // Return: int32_t, -1 if error (i.e. FIFO full), 0 if okay
 int32_t G8RTOS_InitFIFO(uint32_t FIFO_index) {
 
-    if(FIFOs[FIFO_index].currentSize.count == FIFO_SIZE)
+    if(FIFOs[FIFO_index].currentSize == FIFO_SIZE)
     {
         return -1;
     }
@@ -75,11 +75,11 @@ int32_t G8RTOS_InitFIFO(uint32_t FIFO_index) {
 // Return: int32_t, data at head pointer
 int32_t G8RTOS_ReadFIFO(uint32_t FIFO_index) {
 
+     // wait for exclusive access
+    G8RTOS_WaitSemaphore(&FIFOs[FIFO_index].mutex);
+
     // wait for an item to be available (block if empty)
     G8RTOS_WaitSemaphore(&FIFOs[FIFO_index].currentSize);
-    
-    // wait for exclusive access
-    G8RTOS_WaitSemaphore(&FIFOs[FIFO_index].mutex);
     
     // get the data (dereference head)
     int32_t data = *FIFOs[FIFO_index].head;
@@ -94,12 +94,8 @@ int32_t G8RTOS_ReadFIFO(uint32_t FIFO_index) {
         FIFOs[FIFO_index].head = &FIFOs[FIFO_index].buffer[0];
     }
     
-
     // signal that the FIFO has been used to read
     G8RTOS_SignalSemaphore(&FIFOs[FIFO_index].mutex);
-
-    // signal that the data has been sent
-    G8RTOS_SignalSemaphore(&FIFOs[FIFO_index].currentSize);
 
     return data;
 }
@@ -115,7 +111,7 @@ int32_t G8RTOS_WriteFIFO(uint32_t FIFO_index, uint32_t data) {
     // wait for an item to be available 
     //G8RTOS_WaitSemaphore(&FIFOs[FIFO_index].currentSize);
 
-    if(FIFOs[FIFO_index].currentSize.count > FIFO_SIZE - 1)
+    if(FIFOs[FIFO_index].currentSize > FIFO_SIZE - 1)
     {
         // increment lost data
         (FIFOs[FIFO_index].lostData)++;
@@ -129,15 +125,11 @@ int32_t G8RTOS_WriteFIFO(uint32_t FIFO_index, uint32_t data) {
             FIFOs[FIFO_index].tail = &FIFOs[FIFO_index].buffer[0];
         }
 
-        G8RTOS_SignalSemaphore(&FIFOs[FIFO_index].currentSize);
-        G8RTOS_SignalSemaphore(&FIFOs[FIFO_index].mutex);
         return -2;
     }
     else if(FIFO_index > MAX_NUMBER_OF_FIFOS - 1)
     {
         // out of bounds error
-        G8RTOS_SignalSemaphore(&FIFOs[FIFO_index].currentSize);
-        G8RTOS_SignalSemaphore(&FIFOs[FIFO_index].mutex);
         return -1;
     }
 
@@ -152,7 +144,6 @@ int32_t G8RTOS_WriteFIFO(uint32_t FIFO_index, uint32_t data) {
 
     
     G8RTOS_SignalSemaphore(&FIFOs[FIFO_index].currentSize);
-    G8RTOS_SignalSemaphore(&FIFOs[FIFO_index].mutex);
 
     return 0;
 }
