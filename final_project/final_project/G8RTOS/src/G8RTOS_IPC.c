@@ -21,9 +21,9 @@
 /****************************Data Structure Definitions*****************************/
 
 typedef struct G8RTOS_FIFO_t {
-    int32_t buffer[FIFO_SIZE];
-    int32_t* head;
-    int32_t* tail; 
+    uint32_t buffer[FIFO_SIZE];
+    uint32_t* head;
+    uint32_t* tail; 
     uint32_t lostData; // used for debugging
     semaphore_t currentSize;
     semaphore_t mutex;
@@ -88,7 +88,7 @@ int32_t G8RTOS_ReadFIFO(uint32_t FIFO_index) {
     FIFOs[FIFO_index].head++;
 
     // if the value of head (stores and address) = address of final element in buffer array
-    if(FIFOs[FIFO_index].head == &FIFOs[FIFO_index].buffer[FIFO_SIZE])
+    if(FIFOs[FIFO_index].head > &FIFOs[FIFO_index].buffer[FIFO_SIZE-1])
     {
         // set the value of head back to the start (wrap-around)
         FIFOs[FIFO_index].head = &FIFOs[FIFO_index].buffer[0];
@@ -105,29 +105,15 @@ int32_t G8RTOS_ReadFIFO(uint32_t FIFO_index) {
 // Param "FIFO_index": Index of FIFO block
 // Return: int32_t, data at head pointer
 int32_t G8RTOS_WriteFIFO(uint32_t FIFO_index, uint32_t data) {
-    // wait for exclusive access
-    G8RTOS_WaitSemaphore(&FIFOs[FIFO_index].mutex);
     
-    // wait for an item to be available 
-    //G8RTOS_WaitSemaphore(&FIFOs[FIFO_index].currentSize);
-
-    if(FIFOs[FIFO_index].currentSize > FIFO_SIZE - 1)
+    if(FIFOs[FIFO_index].currentSize >= FIFO_SIZE)
     {
         // increment lost data
         (FIFOs[FIFO_index].lostData)++;
 
-        // overwrite old data 
-        *(FIFOs[FIFO_index].tail) = data;
-        *(FIFOs[FIFO_index].tail)++;
-
-        if(FIFOs[FIFO_index].tail == &FIFOs[FIFO_index].buffer[FIFO_SIZE])
-        {
-            FIFOs[FIFO_index].tail = &FIFOs[FIFO_index].buffer[0];
-        }
-
         return -2;
     }
-    else if(FIFO_index > MAX_NUMBER_OF_FIFOS - 1)
+    else if(FIFO_index >= MAX_NUMBER_OF_FIFOS)
     {
         // out of bounds error
         return -1;
@@ -137,7 +123,7 @@ int32_t G8RTOS_WriteFIFO(uint32_t FIFO_index, uint32_t data) {
     *(FIFOs[FIFO_index].tail) = data; 
     *(FIFOs[FIFO_index].tail)++;
 
-    if(FIFOs[FIFO_index].tail == &FIFOs[FIFO_index].buffer[FIFO_SIZE])
+    if(FIFOs[FIFO_index].tail > &FIFOs[FIFO_index].buffer[FIFO_SIZE-1])
     {
         FIFOs[FIFO_index].tail = &FIFOs[FIFO_index].buffer[0];
     }

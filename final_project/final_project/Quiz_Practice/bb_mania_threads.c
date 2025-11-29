@@ -168,7 +168,7 @@ void Update_Screen(void){
         // UARTprintf("X Position: %d\n\n", players[0].current_point.col); 
         // G8RTOS_SignalSemaphore(&sem_UART);
                
-        sleep(10);
+        sleep(100);
     }
 }
 
