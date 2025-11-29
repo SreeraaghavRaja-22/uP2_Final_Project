@@ -31,8 +31,8 @@ void MultimodButtons_Init() {
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOE)){}
 
-    // disable interrupts before configuring 
-    GPIOIntDisable(BUTTONS_INT_GPIO_BASE, BUTTONS_INT_PIN);
+    // // disable interrupts before configuring 
+    // GPIOIntDisable(BUTTONS_INT_GPIO_BASE, BUTTONS_INT_PIN);
 
     // set the interrupt Pin as an input from the perspective of the launchpad
     GPIOPinTypeGPIOInput(BUTTONS_INT_GPIO_BASE, BUTTONS_INT_PIN);
@@ -40,8 +40,8 @@ void MultimodButtons_Init() {
     // set the type of interrupt to falling edge
     GPIOIntTypeSet(BUTTONS_INT_GPIO_BASE, BUTTONS_INT_PIN, GPIO_FALLING_EDGE);
 
-    // Clear interrupt pin 
-    GPIOIntClear(BUTTONS_INT_GPIO_BASE, BUTTONS_INT_PIN);
+    // // Clear interrupt pin 
+    // GPIOIntClear(BUTTONS_INT_GPIO_BASE, BUTTONS_INT_PIN);
     
     // Enable the pin interrupts 
     GPIOIntEnable(BUTTONS_INT_GPIO_BASE, BUTTONS_INT_PIN);
@@ -52,7 +52,7 @@ void MultimodButtons_Init() {
 // Return: uint8_t 
 uint8_t MultimodButtons_Get() {
     // read GPIO Expander and address 0
-    I2C_WriteSingle(I2C_A_BASE, BUTTONS_PCA9555_GPIO_ADDR, 0);
+    I2C_WriteSingle(I2C_A_BASE, BUTTONS_PCA9555_GPIO_ADDR, 0x00);
     return (I2C_ReadSingle(I2C_A_BASE, BUTTONS_PCA9555_GPIO_ADDR));
 }
 

@@ -55,7 +55,7 @@ int main(void) {
     // Initializes the necessary peripherals.
     Multimod_Init();
 
-    ST7789_Fill(ST7789_WHITE);
+    ST7789_Fill(ST7789_BLACK);
    
     // Add threads, initialize semaphores here!
     G8RTOS_InitSemaphore(&sem_UART, UART_Resources);
@@ -84,7 +84,7 @@ int main(void) {
 
     // PERIODIC THREADS
     G8RTOS_Add_PeriodicEvent(Print_WorldCoords, 100, 6);
-    G8RTOS_Add_PeriodicEvent(Get_Joystick, 100, 7); // same period but staggered by 1 ms
+    G8RTOS_Add_PeriodicEvent(Get_Joystick, 20, 7); // same period but staggered by 1 ms
     
     G8RTOS_Launch();
 

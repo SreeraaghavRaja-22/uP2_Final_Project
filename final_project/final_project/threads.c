@@ -285,7 +285,7 @@ void Read_Buttons() {
         G8RTOS_WaitSemaphore(&sem_PCA9555);        
 
         // sleep for a bit
-        sleep(10);
+        sleep(20);
 
         //uint32_t data = GPIOPinRead(BUTTONS_INT_GPIO_BASE, BUTTONS_INT_PIN);
 
@@ -361,14 +361,14 @@ void Read_Buttons() {
         
 
         // this helps prevent the pin from activating on a rising edge (weird issue I ran into)
-        uint8_t released;
-        do {
-            G8RTOS_WaitSemaphore(&sem_I2CA);
-            released = MultimodButtons_Get();
-            G8RTOS_SignalSemaphore(&sem_I2CA);
-            sleep(1);
-        } while (~released & (SW1 | SW2 | SW3 | SW4));
-
+//        uint8_t released;
+//        do {
+//            G8RTOS_WaitSemaphore(&sem_I2CA);
+//            released = MultimodButtons_Get();
+//            G8RTOS_SignalSemaphore(&sem_I2CA);
+//            sleep(1);
+//        } while (~released & (SW1 | SW2 | SW3 | SW4));
+//
         GPIOIntClear(BUTTONS_INT_GPIO_BASE, BUTTONS_INT_PIN);
         GPIOIntEnable(BUTTONS_INT_GPIO_BASE, BUTTONS_INT_PIN);
     }
@@ -412,7 +412,6 @@ void Get_Joystick(void) {
 /*******************************Aperiodic Threads***********************************/
 void GPIOE_Handler() {
     GPIOIntDisable(BUTTONS_INT_GPIO_BASE, BUTTONS_INT_PIN);
-    GPIOIntClear(BUTTONS_INT_GPIO_BASE, BUTTONS_INT_PIN);
     G8RTOS_SignalSemaphore(&sem_PCA9555);
 }
 
