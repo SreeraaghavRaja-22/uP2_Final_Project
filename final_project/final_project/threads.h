@@ -45,18 +45,29 @@ void GPIOD_Handler(void);
 void Accel(void);
 void Gyro(void);
 void Opto(void);
+
+// FIFO threads
 void FIFOProducer(void);
 void FIFOConsumer(void);
 void FIFOConsumer2(void);
+
+
+// Aperiodic Events
 void SW1_ISR(void);
 void SW2_ISR(void);
 void SW1_Event_Handler(void); 
 void SW2_Event_Handler(void);
+
+// Kill Thread Tests
 void ChildA_Thread(void); 
 void ChildB_Thread(void);
+
+// Periodic Threads
 void PThread1(void);
 void PThread2(void);
 void LCDThread(void);
+void Idle_Thread_Periodic(void);
+
 
 
 /********************************Thread Functions***********************************/

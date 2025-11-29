@@ -1,2 +1,11 @@
 # uP2_Final_Project
-Basketball Game
+
+## Basketball Game
+
+- Threads to Add:
+
+## Important Notes
+
+- Add uartstdio.h and uartstdio.c into the driverlib file
+- This will help fix compiler issues with CCS
+- Joystick ADC needs a faster clock or else it won't turn on

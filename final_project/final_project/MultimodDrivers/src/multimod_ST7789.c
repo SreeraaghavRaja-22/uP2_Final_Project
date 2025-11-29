@@ -321,6 +321,8 @@ void ST7789_Init() {
 
     // deselect
     ST7789_Deselect();
+
+    ST7789_Fill(ST7789_WHITE);
 }
 
 // ST7789_DrawPixel

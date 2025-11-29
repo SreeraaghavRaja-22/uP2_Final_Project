@@ -74,18 +74,7 @@ time_t val = 23;
 
 // need this to not get a deadlock or else you're cooked
 void Idle_Thread(void) {
-    for(;;)
-    {
-        //G8RTOS_WaitSemaphore(&sem_SPI);
-        //if(idle_count++ % 2 == 0){ST7789_Fill((ST7789_ORANGE));}
-        //else{ST7789_Fill(ST7789_BLUE);}
-        //G8RTOS_SignalSemaphore(&sem_SPI);
-
-        //G8RTOS_WaitSemaphore(&sem_UART);
-        //UARTprintf("I like Banana Milk\n\n");
-        //G8RTOS_SignalSemaphore(&sem_UART);
-        // don't sleep idle thread
-    }
+    for(;;){}
 }
 
 
@@ -365,10 +354,10 @@ void Read_Buttons() {
             SW4P = 1;
         }
 
-        G8RTOS_WaitSemaphore(&sem_UART);
-        UARTprintf("SW1: %u, SW2: %u, SW3: %u, SW4: %u\n\n", SW1P, SW2P, SW3P, SW4P);
-        // UARTprintf("Data: %x\n\n", data);
-        G8RTOS_SignalSemaphore(&sem_UART);
+        // G8RTOS_WaitSemaphore(&sem_UART);
+        // UARTprintf("SW1: %u, SW2: %u, SW3: %u, SW4: %u\n\n", SW1P, SW2P, SW3P, SW4P);
+        // // UARTprintf("Data: %x\n\n", data);
+        // G8RTOS_SignalSemaphore(&sem_UART);
         
 
         // this helps prevent the pin from activating on a rising edge (weird issue I ran into)
@@ -630,6 +619,10 @@ void PThread2(void){
     G8RTOS_WaitSemaphore(&sem_UART);
     UARTprintf("Give me giants and a hydra!\n\n");
     G8RTOS_SignalSemaphore(&sem_UART); 
+}
+
+void Idle_Thread_Periodic(void){
+    // do nothing fr
 }
 
 void LCDThread(void){

@@ -49,7 +49,7 @@ void SPI_Init(uint32_t mod) {
 
         // use mode 0 or mode 3 for the SPI interface 
         // LCD Display goes to 20MHz
-        SSIConfigSetExpClk(mod, SysCtlClockGet(), SSI_FRF_MOTO_MODE_3, SSI_MODE_MASTER, 2000000, 8);
+        SSIConfigSetExpClk(mod, SysCtlClockGet(), SSI_FRF_MOTO_MODE_3, SSI_MODE_MASTER, 20000000, 8);
 
         // configure pin types (MOSI, MISO, etc.)
         // extraneous clock sets and sources (do in critical section)

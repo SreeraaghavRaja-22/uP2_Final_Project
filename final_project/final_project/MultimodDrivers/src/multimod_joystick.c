@@ -28,8 +28,10 @@
 // Initializes ports & adc module for joystick
 // Return: void
 void JOYSTICK_Init(void) {
+    // disable ADC before turning on the port
+    SysCtlPeripheralDisable(SYSCTL_PERIPH_ADC0);
     // multimod buttons use the same port as joystick x, y, so put multimod buttons init before joystick init
-
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);
     // enable ADC module (Idk if it's 0 or 1) -- shouldn't matter (might have to use both)
     SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_ADC0)){}

@@ -41,7 +41,7 @@
 int main(void) {
 
     // sysclock
-    SysCtlClockSet(SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ);
+    SysCtlClockSet(SYSCTL_SYSDIV_2_5 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ);
 
 
     //fix floating point issues
@@ -55,7 +55,7 @@ int main(void) {
     // Initializes the necessary peripherals.
     Multimod_Init();
 
-    ST7789_Fill(ST7789_BLACK);
+    ST7789_Fill(ST7789_WHITE);
    
     // Add threads, initialize semaphores here!
     G8RTOS_InitSemaphore(&sem_UART, UART_Resources);

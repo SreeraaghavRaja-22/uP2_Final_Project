@@ -37,12 +37,12 @@
 int main(void) {
 
     // sysclock
-    SysCtlClockSet(SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ);
+    SysCtlClockSet(SYSCTL_SYSDIV_2_5 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ);
 
     // Initializes the necessary peripherals.
     Multimod_Init();
 
-    //ST7789_Fill(ST7789_WHITE);
+    ST7789_Fill(ST7789_BLUE);
    
     // Add threads, initialize semaphores here!
     G8RTOS_InitSemaphore(&sem_UART, UART_Resources);
@@ -51,21 +51,21 @@ int main(void) {
     G8RTOS_InitSemaphore(&sem_SW1, SW_Resources);
 
     // initialize the FIFOs
-    //G8RTOS_InitFIFO(0);
+    G8RTOS_InitFIFO(0);
     G8RTOS_Init();
-    G8RTOS_Add_APeriodicEvent(SW1_ISR, 2, INT_GPIOF);
+    //G8RTOS_Add_APeriodicEvent(SW1_ISR, 2, INT_GPIOF);
     //G8RTOS_Add_APeriodicEvent(SW2_ISR, 2, INT_GPIOF);
-    G8RTOS_AddThread(Accel, 0, "Accel", 32);
-    G8RTOS_AddThread(Gyro, 1, "Gyro", 64);
+    //G8RTOS_AddThread(Accel, 0, "Accel", 32);
+    //G8RTOS_AddThread(Gyro, 1, "Gyro", 64);
 
     // G8RTOS_AddThread(Opto, 2, "Opto", 96);
-    // G8RTOS_AddThread(FIFOProducer, 3, "FIFPROD", 100);
-    // G8RTOS_AddThread(FIFOConsumer, 5, "FIFCONS", 101);
-    // G8RTOS_AddThread(FIFOConsumer2, 5, "FIFOCONS2", 133);
-    G8RTOS_AddThread(SW1_Event_Handler, 5, "SW1E", 20);
+    G8RTOS_AddThread(FIFOProducer, 3, "FIFPROD", 100);
+    G8RTOS_AddThread(FIFOConsumer, 5, "FIFCONS", 101);
+    //G8RTOS_AddThread(LCDThread, 5, "LCDThread", 102);
+    //G8RTOS_AddThread(SW1_Event_Handler, 5, "SW1E", 20);
     //G8RTOS_AddThread(SW2_Event_Handler, 1, "SW2E", 343);
-    G8RTOS_Add_PeriodicEvent(PThread1, 300, 300);
-    G8RTOS_Add_PeriodicEvent(PThread2, 310, 300); // same period but staggered by 1 ms
+    G8RTOS_Add_PeriodicEvent(Idle_Thread_Periodic, 300, 300);
+    //G8RTOS_Add_PeriodicEvent(PThread2, 310, 300); // same period but staggered by 1 ms
     G8RTOS_AddThread(Idle_Thread, MIN_PRIORITY, "IDLE", 200);
     G8RTOS_Launch();
 
