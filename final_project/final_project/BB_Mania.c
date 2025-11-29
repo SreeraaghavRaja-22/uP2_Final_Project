@@ -13,7 +13,7 @@
 #include "G8RTOS/G8RTOS.h"
 #include "./MultimodDrivers/multimod.h"
 
-#include "./Quiz_Practice/snake_threads.h"
+#include "./Quiz_Practice/bb_mania_threads.h"
 #include <driverlib/fpu.h>
 #include "time.h"
 
@@ -38,27 +38,14 @@
 // those, too.
 int main(void) {
 
-    // sysclock
     SysCtlClockSet(SYSCTL_SYSDIV_2_5 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ);
-
-
-    //fix floating point issues
-    //float num = 1.0 / 2.0; 
-    //FPUStackingDisable();
-
     
-    // get a random seed 
-    //srand(time(120));
-
-    // Initializes the necessary peripherals.
     Multimod_Init();
-
     ST7789_Fill(ST7789_BLACK);
-   
-    // Add threads, initialize semaphores here!
+
     G8RTOS_InitSemaphore(&sem_UART, UART_Resources);
     G8RTOS_InitSemaphore(&sem_I2CA, I2C_Resources);
-    G8RTOS_InitSemaphore(&sem_SPI, SPI_Resources);
+    G8RTOS_InitSemaphore(&sem_SPIA, SPI_Resources);
     G8RTOS_InitSemaphore(&sem_PCA9555, MMB_Resources);
     G8RTOS_InitSemaphore(&sem_JOY, JOY_Resources);
     G8RTOS_InitSemaphore(&sem_KillCube, KillCube_Resources);
@@ -66,25 +53,26 @@ int main(void) {
     G8RTOS_Init();
 
     // IDLE THREAD
-    G8RTOS_AddThread(Idle_Thread_Snake, MIN_PRIORITY, "IDLE", 200);
+    G8RTOS_AddThread(Idle_Thread_BB, MIN_PRIORITY, "IDLE", 200);
 
     // APERIODIC THREADS
-    G8RTOS_Add_APeriodicEvent(Snake_GPIOD_Handler, 2, INT_GPIOD);
+    // G8RTOS_Add_APeriodicEvent(BK_GPIOD_Handler, 2, INT_GPIOD);
+    // G8RTOS_Add_APeriodicEvent(BK_GPIOE_Handler, 3, INT_GPIOE);
 
     // Background Threads
-    G8RTOS_AddThread(Game_Init, 20, "BLOCK_INIT", 1);
-    G8RTOS_AddThread(Restart_Game, 1, "RESTART", 88);
+    G8RTOS_AddThread(Game_Init_BB, 20, "BLOCK_INIT", 1);
+    // G8RTOS_AddThread(Box_Mov, 21, "Move", 23);
+    // G8RTOS_AddThread(Restart_BK, 1, "RESTART", 88);
 
     // PERIODIC THREADS
-    G8RTOS_Add_PeriodicEvent(Game_Update, 200, 6); // same period but staggered by 1 ms
-    G8RTOS_Add_PeriodicEvent(Get_Joystick_Snake, 10, 9);
+    G8RTOS_Add_PeriodicEvent(Idle_Thread_Periodic_BB, 175, 6); // same period but staggered by 1 ms
+    // G8RTOS_Add_PeriodicEvent(Get_Joystick_BK, 30, 9);
 
  
     
     G8RTOS_Launch();
 
-    // spin - the RTOS will take over now
-    while(1);
+    for(;;){}
 }
 
 /************************************MAIN*******************************************/

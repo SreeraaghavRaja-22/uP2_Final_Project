@@ -281,7 +281,6 @@ void Game_Update(void){
         update_snake();
         move_snake();
         check_lose();
-        sleep(10);
         check_collision();
         draw_block(&snake.snake_array[snake.head_index], ST7789_WHITE);
     }
@@ -330,14 +329,16 @@ void Game_Over(void){
 void Restart_Game(void){
     for(;;){
         G8RTOS_WaitSemaphore(&sem_JOY);
-        sleep(10);
+        sleep(50);
         uint32_t data = GPIOPinRead(JOYSTICK_INT_GPIO_BASE, JOYSTICK_INT_PIN);
-        if(data == 0){
+        if(data == 0 && game_over){
             // toggle joystick flag value
             game_begin = true; 
             game_over = false; 
         }
+        GPIOIntClear(JOYSTICK_INT_GPIO_BASE, JOYSTICK_INT_PIN);
         GPIOIntEnable(JOYSTICK_INT_GPIO_BASE, JOYSTICK_INT_PIN);
+        sleep(10);
     }
 }
 

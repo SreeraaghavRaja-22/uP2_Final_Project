@@ -3,6 +3,15 @@
 ## Basketball Game
 
 - Threads to Add:
+  - Move Character Thread:
+  - Update Screen Thread:
+  - Menu Thread:
+  - Selection Thread:
+  - Enemy Thread:
+  - DAC Timer Handler:
+  - Button Handler:
+  - Joystick Button Handler:
+  - Game Init Thread:
 
 ## Important Notes
 

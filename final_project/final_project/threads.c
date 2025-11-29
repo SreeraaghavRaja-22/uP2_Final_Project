@@ -284,8 +284,10 @@ void Read_Buttons() {
      for(;;){
         G8RTOS_WaitSemaphore(&sem_PCA9555);        
 
+        GPIOIntClear(BUTTONS_INT_GPIO_BASE, BUTTONS_INT_PIN);
+
         // sleep for a bit
-        sleep(20);
+        sleep(15);
 
         //uint32_t data = GPIOPinRead(BUTTONS_INT_GPIO_BASE, BUTTONS_INT_PIN);
 
@@ -360,17 +362,18 @@ void Read_Buttons() {
         // G8RTOS_SignalSemaphore(&sem_UART);
         
 
-        // this helps prevent the pin from activating on a rising edge (weird issue I ran into)
-//        uint8_t released;
-//        do {
-//            G8RTOS_WaitSemaphore(&sem_I2CA);
-//            released = MultimodButtons_Get();
-//            G8RTOS_SignalSemaphore(&sem_I2CA);
-//            sleep(1);
-//        } while (~released & (SW1 | SW2 | SW3 | SW4));
-//
-        GPIOIntClear(BUTTONS_INT_GPIO_BASE, BUTTONS_INT_PIN);
+         //this helps prevent the pin from activating on a rising edge (weird issue I ran into)
+        uint8_t released;
+        do {
+            G8RTOS_WaitSemaphore(&sem_I2CA);
+            released = MultimodButtons_Get();
+            G8RTOS_SignalSemaphore(&sem_I2CA);
+            sleep(1);
+        } while (~released & (SW1 | SW2 | SW3 | SW4));
+
         GPIOIntEnable(BUTTONS_INT_GPIO_BASE, BUTTONS_INT_PIN);
+
+        sleep(10);
     }
 }
 

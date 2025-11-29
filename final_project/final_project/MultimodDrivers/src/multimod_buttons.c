@@ -41,7 +41,7 @@ void MultimodButtons_Init() {
     GPIOIntTypeSet(BUTTONS_INT_GPIO_BASE, BUTTONS_INT_PIN, GPIO_FALLING_EDGE);
 
     // // Clear interrupt pin 
-    // GPIOIntClear(BUTTONS_INT_GPIO_BASE, BUTTONS_INT_PIN);
+    GPIOIntClear(BUTTONS_INT_GPIO_BASE, BUTTONS_INT_PIN);
     
     // Enable the pin interrupts 
     GPIOIntEnable(BUTTONS_INT_GPIO_BASE, BUTTONS_INT_PIN);
