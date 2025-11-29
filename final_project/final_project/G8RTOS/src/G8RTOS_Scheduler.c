@@ -135,7 +135,6 @@ void G8RTOS_Init() {
     SystemTime = 0;
     NumberOfThreads = 0;
     NumberOfPThreads = 0;
-    deadThreadIndex = 0;
     
 }
 

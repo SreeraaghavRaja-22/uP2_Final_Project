@@ -13,7 +13,7 @@
 #include "G8RTOS/G8RTOS.h"
 #include "./MultimodDrivers/multimod.h"
 
-#include "./threads.h"
+#include "threads.h"
 #include <driverlib/fpu.h>
 #include "time.h"
 

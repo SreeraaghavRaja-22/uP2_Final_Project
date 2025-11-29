@@ -1,7 +1,7 @@
 
 /************************************Includes***************************************/
 
-#include "./Quiz_Practice/breakout_threads.h"
+#include "Quiz_Practice/breakout_threads.h"
 #include "G8RTOS/G8RTOS_Scheduler.h"
 #include "G8RTOS/G8RTOS_IPC.h"
 
