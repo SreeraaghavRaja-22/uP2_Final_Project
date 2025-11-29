@@ -14,13 +14,19 @@
 /************************************Includes***************************************/
 
 /*************************************Defines***************************************/
+
+#define PLAYER1_COLOR ST7789_GREEN
+#define PLAYER2_COLOR ST7789_BLUE
+#define GROUND_COLOR ST7789_WHITE
+#define BG_COLOR ST7789_BLACK
 #define S_MAX 50
-#define JOY_U_BOUND (2048+250)
-#define JOY_L_BOUND (2048-250)
+#define JOY_U_BOUND (2048+150)
+#define JOY_L_BOUND (2048-150)
 #define PIX_OFFSET 5
 #define GRID_W 24
 #define GRID_L 28
 #define PIX_SQU 10
+
 /*************************************Defines***************************************/
 
 
@@ -50,6 +56,8 @@ typedef struct Point{
 typedef struct Player{
     bool ball_contacted;
     Point current_point;
+    bool is_moved;
+    int16_t prev_x;
 } Player;
 
 
@@ -68,16 +76,17 @@ static bool game_over = false;
 /*********************************** FUNCTIONS ********************************/
 
 // Prototypes
-void draw_player(Player* playerx, int16_t color);
+void draw_player(Player* playerx, int16_t color, int16_t x_pos);
 void reset_position(Player* playerx, uint8_t p_inx);
+void update_char(Player* playerx, int16_t del_x);
 
 
 
 
 // Definitions
-void draw_player(Player* playerx, int16_t color){
+void draw_player(Player* playerx, int16_t color, int16_t x_pos){
     G8RTOS_WaitSemaphore(&sem_SPIA);
-    ST7789_DrawRectangle((*playerx).current_point.col, (*playerx).current_point.row, 10, 70, color);
+    ST7789_DrawRectangle(x_pos, (*playerx).current_point.row, 10, 70, color);
     G8RTOS_SignalSemaphore(&sem_SPIA);
 }
 
@@ -85,23 +94,33 @@ void reset_position(Player* playerx, uint8_t p_inx){
     if(p_inx == 0){
         playerx->current_point.col = 30;
         playerx->current_point.row = 10;
+        playerx->prev_x = 30;
     }
     else if(p_inx == 1){
         playerx->current_point.col = 210;
         playerx->current_point.row = 10;
+        playerx->prev_x = 210;
     }
 }
 
+void update_char(Player* playerx, int16_t del_x){
+    playerx->prev_x = playerx->current_point.col;
 
-// static inline dir opposite_dir(dir opp){
-//     switch(opp){
-//         case RIGHT : return LEFT; 
-//         case LEFT  : return RIGHT; 
-//         case UP    : return DOWN; 
-//         case DOWN  : return UP;
-//         default    : return NONE;
-//     }
-// }
+    if(del_x >= JOY_U_BOUND){
+        if(playerx->current_point.col - 10 > 20){
+            playerx->current_point.col -= 10;
+            playerx->is_moved = true;
+        }
+    }
+
+    else if(del_x <= JOY_L_BOUND){
+        if(playerx->current_point.col+10 < X_MAX - 20){
+            playerx ->current_point.col += 10;
+            playerx->is_moved = true; 
+        }
+    }
+}
+
 
 /*************************************Threads***************************************/
 // Working Threads 
@@ -117,94 +136,53 @@ void Game_Init_BB(void){
             reset_position(&players[0], 0);            
             reset_position(&players[1], 1);
         
-            ST7789_DrawRectangle(0, 0, Y_MAX, 10, ST7789_WHITE);
+            ST7789_DrawRectangle(0, 0, X_MAX, 10, GROUND_COLOR);
    
-            draw_player(&players[0], ST7789_GREEN);
-            draw_player(&players[1], ST7789_BLUE);
-            ST7789_ORANGE
-            
-            // sleep just in case
-            sleep(10);
+            draw_player(&players[0], PLAYER1_COLOR, players[0].current_point.col);
+            draw_player(&players[1], PLAYER2_COLOR, players[1].current_point.col);
 
             game_begin = false;
         }
+
+        sleep(10);
     }
 }
 
-// void Game_Update(void){
-//     if(!game_over){
-//         draw_block(&snake.snake_array[snake.tail_index], ST7789_BLACK);
-//         update_snake();
-//         move_snake();
-//         check_lose();
-//         check_collision();
-//         draw_block(&snake.snake_array[snake.head_index], ST7789_WHITE);
-//     }
-// }
+void Update_Screen(void){
+    for(;;){
+        int16_t char_pos = G8RTOS_ReadFIFO(MOVEMENT_FIFO);
 
-// // periodic thread
-// void Get_Joystick_Snake(void) {
+        G8RTOS_WaitSemaphore(&sem_UART);
+        UARTprintf("prev_x: %d\n\n", players[0].prev_x);
+        G8RTOS_SignalSemaphore(&sem_UART);
 
-//     joy_data_x = JOYSTICK_GetX();
-//     joy_data_y = JOYSTICK_GetY();
-//     if(!game_over){
-//         dir proposed = snake.snk_dir;
-    
-//         if(joy_data_x <= JOY_L_BOUND){
-//             proposed = RIGHT;
-//         }
-//         else if(joy_data_x >= JOY_U_BOUND){
-//             proposed = LEFT;
-//         }
-//         else if(joy_data_y <= JOY_L_BOUND){
-//             proposed = DOWN;
-//         }
-//         else if(joy_data_y >= JOY_U_BOUND){
-//             proposed = UP;
-//         }
+        update_char(&players[0], char_pos);
 
-//         if(proposed != opposite_dir(snake.snk_dir)){
-//             next_dir = proposed;
-//         }
-//     }
- 
-// }
+        // if(players[0].is_moved){
+        //     draw_player(&players[0], BG_COLOR, prev_x);
+        //     draw_player(&players[0], PLAYER1_COLOR, players[0].current_point.col);
+        //     players[0].is_moved = false;
+        // }
 
-// void Game_Over(void){
-//     for(;;){
-//         G8RTOS_WaitSemaphore(&sem_SPI);
-//         ST7789_DrawRectangle(orange.current_point.col, orange.current_point.row, 10, 10, ST7789_BLACK);
-//         for(int8_t i = 0; i < snake.snake_size; ++i){
-//             ST7789_DrawRectangle(snake.snake_array[i].current_point.col, snake.snake_array[i].current_point.row, 10, 10, ST7789_BLACK);
-//         }
-//         G8RTOS_SignalSemaphore(&sem_SPI);
-//         G8RTOS_KillSelf();
-//     }
-// }
+        // G8RTOS_WaitSemaphore(&sem_UART);
+        // UARTprintf("X Position: %d\n\n", players[0].current_point.col); 
+        // G8RTOS_SignalSemaphore(&sem_UART);
+               
+        sleep(10);
+    }
+}
 
-// void Restart_Game(void){
-//     for(;;){
-//         G8RTOS_WaitSemaphore(&sem_JOY);
-//         sleep(50);
-//         uint32_t data = GPIOPinRead(JOYSTICK_INT_GPIO_BASE, JOYSTICK_INT_PIN);
-//         if(data == 0 && game_over){
-//             // toggle joystick flag value
-//             game_begin = true; 
-//             game_over = false; 
-//         }
-//         GPIOIntClear(JOYSTICK_INT_GPIO_BASE, JOYSTICK_INT_PIN);
-//         GPIOIntEnable(JOYSTICK_INT_GPIO_BASE, JOYSTICK_INT_PIN);
-//         sleep(10);
-//     }
-// }
-
-// void Snake_GPIOD_Handler(void) {
-//     GPIOIntDisable(JOYSTICK_INT_GPIO_BASE, JOYSTICK_INT_PIN);
-//    	GPIOIntClear(JOYSTICK_INT_GPIO_BASE, JOYSTICK_INT_PIN);
-//     G8RTOS_SignalSemaphore(&sem_JOY);
-// }
-
+/********************** Periodic Threads *****************************/
 void Idle_Thread_Periodic_BB(void){
     // do nothing
 }
 
+void Move_Character(void){
+    int16_t del_x = (int16_t)JOYSTICK_GetX();
+    int16_t fifo = G8RTOS_WriteFIFO(MOVEMENT_FIFO, del_x);
+    G8RTOS_WaitSemaphore(&sem_UART);
+    UARTprintf("X Position: %d\n\n", del_x);
+    UARTprintf("FIFO Output: %d\n\n", fifo);
+    G8RTOS_SignalSemaphore(&sem_UART);
+}
+/********************** Periodic Threads *****************************/

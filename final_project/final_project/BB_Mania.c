@@ -39,7 +39,7 @@
 int main(void) {
 
     SysCtlClockSet(SYSCTL_SYSDIV_2_5 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ);
-    
+
     Multimod_Init();
     ST7789_Fill(ST7789_BLACK);
 
@@ -51,6 +51,7 @@ int main(void) {
     G8RTOS_InitSemaphore(&sem_KillCube, KillCube_Resources);
 
     G8RTOS_Init();
+    G8RTOS_InitFIFO(MOVEMENT_FIFO);
 
     // IDLE THREAD
     G8RTOS_AddThread(Idle_Thread_BB, MIN_PRIORITY, "IDLE", 200);
@@ -60,13 +61,13 @@ int main(void) {
     // G8RTOS_Add_APeriodicEvent(BK_GPIOE_Handler, 3, INT_GPIOE);
 
     // Background Threads
-    G8RTOS_AddThread(Game_Init_BB, 20, "BLOCK_INIT", 1);
-    // G8RTOS_AddThread(Box_Mov, 21, "Move", 23);
+    G8RTOS_AddThread(Game_Init_BB, 20, "START", 1);
+    G8RTOS_AddThread(Update_Screen, 21, "Move", 2);
     // G8RTOS_AddThread(Restart_BK, 1, "RESTART", 88);
 
     // PERIODIC THREADS
-    G8RTOS_Add_PeriodicEvent(Idle_Thread_Periodic_BB, 175, 6); // same period but staggered by 1 ms
-    // G8RTOS_Add_PeriodicEvent(Get_Joystick_BK, 30, 9);
+    //G8RTOS_Add_PeriodicEvent(Idle_Thread_Periodic_BB, 175, 6); 
+    G8RTOS_Add_PeriodicEvent(Move_Character, 100, 5);
 
  
     

@@ -4,7 +4,9 @@
 
 - Threads to Add:
   - Move Character Thread:
+    - Gets Joystick position and writes to the FIFO
   - Update Screen Thread:
+    - Only move certain things based on FIFO (maybe a bool)
   - Menu Thread:
   - Selection Thread:
   - Enemy Thread:

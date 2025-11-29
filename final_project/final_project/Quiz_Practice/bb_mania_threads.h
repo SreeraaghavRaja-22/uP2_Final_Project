@@ -12,7 +12,7 @@
 #include "../G8RTOS/G8RTOS_CriticalSection.h"
 
 /************************************Includes***************************************/
-
+#define MOVEMENT_FIFO 0
 /***********************************Semaphores**************************************/
 semaphore_t sem_UART;
 semaphore_t sem_I2CA;
@@ -21,17 +21,15 @@ semaphore_t sem_SW1;
 semaphore_t sem_JOY;
 semaphore_t sem_PCA9555;
 semaphore_t sem_KillCube;
+
 /***********************************Semaphores**************************************/
 
 // thread definitions
 void Idle_Thread_BB(void);
 void Game_Init_BB(void);
-void Game_Update_BB(void);
-void Get_Joystick_BB(void);
-void Game_Over_BB(void);
-void Restart_Game_BB(void);
-void BB_GPIOD_Handler(void);
+void Update_Screen(void);
 void Idle_Thread_Periodic_BB(void);
+void Move_Character(void);
 
 
 
