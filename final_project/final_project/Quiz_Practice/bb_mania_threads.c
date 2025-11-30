@@ -220,20 +220,45 @@ void bounce_ball(void){\
     }
 
     if(bball.ball_dir == DOWN){
-        if(bball.current_point.row == 10){
+        if(bball.current_point.row <= 10){
             bball.ball_dir = UP;
         }
-        else{
+        else if(bball.current_point.row - 40 >= 10){
             bball.current_point.row--;  
         }      
+        else if(bball.current_point.row - 30 >= 10){
+            bball.current_point.row -= 2;
+        }
+        else if(bball.current_point.row - 20 >= 10){
+            bball.current_point.row -= 3;
+        }
+        else{
+            bball.current_point.row -= 5;
+        }
     }  
     else{
-        if(bball.current_point.row + 10 == bball.max_height){
+        if(bball.current_point.row + 10 >= bball.max_height){
             bball.ball_dir = DOWN;
+        }
+         else if(bball.current_point.row + 40 <= bball.max_height){
+            bball.current_point.row += 5;  
+        }      
+        else if(bball.current_point.row + 30 <= bball.max_height){
+            bball.current_point.row += 3;
+        }
+        else if(bball.current_point.row + 20 <= bball.max_height){
+            bball.current_point.row += 2;
         }
         else{
             bball.current_point.row++;
         }
+    }
+
+    if(bball.current_point.row <= 10){
+        bball.current_point.row = 10; 
+    }
+    else if(bball.current_point.row >= bball.max_height){
+        bball.current_point.row = bball.max_height;
     }
 }
 
@@ -280,21 +305,19 @@ void Game_Init_BB(void){
 
 void Update_Screen(void){
     for(;;){
-        // G8RTOS_WaitSemaphore(&sem_UART);
-        // UARTprintf("ball_pos: %d\n\n", bball.current_point.col);
-        // G8RTOS_SignalSemaphore(&sem_UART);
-
         bball.prev_x = bball.current_point.col;
         bball.prev_y = bball.current_point.row; 
+        draw_ball(ST7789_BLACK);
 
         update_char(&players[1], del_x);
         
+        // if(bball.current_point.col != bball.prev_x || bball.current_point.row != bball.prev_y){
+        //     draw_ball(ST7789_BLACK);
+        // }
+
         check_ball_pos();
         bounce_ball();
-        
-        if(bball.current_point.col != bball.prev_x || bball.current_point.row != bball.prev_y){
-            draw_ball(ST7789_BLACK);
-        }
+
 
         if(players[0].is_moved){
             draw_player(&players[0], BG_COLOR, players[0].prev_x);
@@ -309,6 +332,8 @@ void Update_Screen(void){
         }
 
         draw_ball(BALL_COLOR);
+
+        sleep(5);
     }
 }
 
@@ -321,9 +346,6 @@ void Read_Button(void){
         // sleep for a bit
         sleep(15);
 
-        //uint32_t data = GPIOPinRead(BUTTONS_INT_GPIO_BASE, BUTTONS_INT_PIN);
-
-        
         G8RTOS_WaitSemaphore(&sem_I2CA);
         uint8_t data = MultimodButtons_Get();
         G8RTOS_SignalSemaphore(&sem_I2CA);
