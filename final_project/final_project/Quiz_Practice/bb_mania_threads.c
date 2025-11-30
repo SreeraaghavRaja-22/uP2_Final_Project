@@ -171,28 +171,34 @@ void check_ball_pos(void){
     int16_t p1_l = players[1].current_point.col; 
     int16_t p1_r = players[1].current_point.col + PLAYER_WIDTH;
 
-    if(bball_l <= p0_r && bball_r >= p0_l && bball.current_point.row <= PLAYER_HEIGHT){
+    if(bball_l <= p0_r && bball_r >= p0_l && !bball.shoot_ball){
         bball.is_held = true; 
         bball.held_by = 1; 
         bball.current_point.col = p0_r;
     }
-    else if(bball_l <= p1_r && bball_r >= p1_l && bball.current_point.row <= PLAYER_HEIGHT){
+    else if(bball_l <= p1_r && bball_r >= p1_l && !bball.shoot_ball){
         bball.is_held = true; 
         bball.held_by = 2; 
         bball.current_point.col = p1_l - BALL_RAD;
     }
-    // boundary conditions
-    if(bball.current_point.col + BALL_RAD >= hoops[1].current_point.col){
-        bball.current_point.col = hoops[1].current_point.col - BALL_RAD;
+    else{
+        bball.is_held = false;
+        if(!bball.shoot_ball)
+        bball.held_by = 0;
     }
-    if(bball.current_point.col <= hoops[0].current_point.col){
-        bball.current_point.col = hoops[0].current_point.col;
+
+    if(!bball.is_held && !bball.shoot_ball){
+          // boundary conditions
+        if(bball.current_point.col + BALL_RAD >= hoops[1].current_point.col){
+            bball.current_point.col = hoops[1].current_point.col - BALL_RAD;
+        }
+        if(bball.current_point.col <= hoops[0].current_point.col){
+            bball.current_point.col = hoops[0].current_point.col;
+        }
     }
 }
 void throw_logic(void){
-    // do x direction movement 
-    // int16_t delta_x = abs(bball.current_point.col - 120);
-
+    // do x direction movement
     if(bball.held_by == 1){
         if(bball.current_point.col <= 120 ){
             bball.current_point.col++;
@@ -248,7 +254,7 @@ void throw_logic(void){
     else if(bball.ball_dir == DOWN){
         if(bball.current_point.row <= 10){
             bball.ball_dir = UP;
-            return; 
+            bball.shoot_ball = false; 
         }
         else if(bball.current_point.row > 10 && bball.current_point.row <= 50){
             bball.current_point.row -= 30;
@@ -264,7 +270,6 @@ void throw_logic(void){
         }
     }
 }
-    
 void bounce_ball(void){
     if(bball.ball_dir == DOWN){
         if(bball.current_point.row <= 10){
@@ -323,6 +328,13 @@ void ball_movement(void){
     }
     else if(bball.current_point.row >= bball.max_height){
         bball.current_point.row = bball.max_height;
+    }
+
+    if(bball.current_point.col <= 10){
+        bball.current_point.col = 10;
+    }
+    else if(bball.current_point.row >= 220){
+        bball.current_point.col = 220;
     }
 }
 
