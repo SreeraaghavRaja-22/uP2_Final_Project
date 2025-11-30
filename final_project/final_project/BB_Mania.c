@@ -62,12 +62,13 @@ int main(void) {
 
     // Background Threads
     G8RTOS_AddThread(Game_Init_BB, 20, "START", 1);
-    G8RTOS_AddThread(Update_Screen, 21, "UPDATE", 2);
-    G8RTOS_AddThread(Read_Button, 22, "READBUTT", 3);
+    G8RTOS_AddThread(Update_Screen, 1, "UPDATE", 3);
+    //G8RTOS_AddThread(Read_Button, 23, "READBUTT", 4);
 
     // PERIODIC THREADS
     G8RTOS_Add_PeriodicEvent(Move_Character, 100, 5);
-    G8RTOS_Add_PeriodicEvent(Move_Opp, 200, 6);
+    G8RTOS_Add_PeriodicEvent(Move_Opp, 200, 7);
+
 
     
     G8RTOS_Launch();
