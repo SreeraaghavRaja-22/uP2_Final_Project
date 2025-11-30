@@ -406,7 +406,7 @@ void Update_Screen(void){
         update_char(&players[1], del_x);
         check_ball_pos();
         ball_movement();
-        check_ball_hoop();
+        //check_ball_hoop();
         if(players[0].is_moved){
             draw_player(&players[0], BG_COLOR, players[0].prev_x);
             draw_player(&players[0], PLAYER1_COLOR, players[0].current_point.col);
