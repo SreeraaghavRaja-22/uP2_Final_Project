@@ -3,17 +3,21 @@
 ## Basketball Game
 
 - Threads to Add:
+  - Game Init Thread:
+    - Initialize the Game
+      - Draw Player Position, Hoop Position, Ball Position
   - Move Character Thread:
-    - Gets Joystick position and writes to the FIFO
+    - Move Character Left or Right based on Joystick (using a FIFO caused a lot of issues)
+  - Gets Joystick position and writes to the FIFO
   - Update Screen Thread:
-    - Only move certain things based on FIFO (maybe a bool)
+  - Only move certain things based on FIFO (maybe a bool)
   - Menu Thread:
   - Selection Thread:
   - Enemy Thread:
   - DAC Timer Handler:
   - Button Handler:
   - Joystick Button Handler:
-  - Game Init Thread:
+-
 
 ## Important Notes
 

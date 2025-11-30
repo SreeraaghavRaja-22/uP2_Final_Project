@@ -28,10 +28,9 @@ semaphore_t sem_KillCube;
 void Idle_Thread_BB(void);
 void Game_Init_BB(void);
 void Update_Screen(void);
-void Idle_Thread_Periodic_BB(void);
 void Move_Character(void);
 void Move_Opp(void);
-void Update_Ball(void);
+void Button_Handler(void);
 
 
 

@@ -58,7 +58,7 @@ int main(void) {
 
     // APERIODIC THREADS
     // G8RTOS_Add_APeriodicEvent(BK_GPIOD_Handler, 2, INT_GPIOD);
-    // G8RTOS_Add_APeriodicEvent(BK_GPIOE_Handler, 3, INT_GPIOE);
+    G8RTOS_Add_APeriodicEvent(Button_Handler, 3, INT_GPIOE);
 
     // Background Threads
     G8RTOS_AddThread(Game_Init_BB, 20, "START", 1);
