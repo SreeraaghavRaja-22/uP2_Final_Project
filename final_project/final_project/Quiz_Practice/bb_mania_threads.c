@@ -52,7 +52,7 @@ typedef struct Player{
 typedef struct Hoop{
     Point current_point;
     bool is_hit; 
-    int16_t score; 
+    uint8_t score; 
 } Hoop;
 typedef struct Ball{
     Point current_point; 
@@ -83,9 +83,12 @@ void reset_position(Player* playerx, uint8_t p_inx);
 void update_char(Player* playerx, int16_t del_x);
 void update_opp(Player* playerx, int8_t del_x);
 void check_ball_pos(void);
+void boundary_cond(void);
 void throw_logic(void);
 void bounce_ball(void);
 void ball_movement(void);
+void check_ball_hoop(void);
+void reset_ball(void);
 
 
 // Definitions
@@ -195,6 +198,21 @@ void check_ball_pos(void){
         if(bball.current_point.col <= hoops[0].current_point.col){
             bball.current_point.col = hoops[0].current_point.col;
         }
+    }
+}
+void boundary_cond(void){
+    if(bball.current_point.row <= 10){
+        bball.current_point.row = 10; 
+    }
+    else if(bball.current_point.row >= bball.max_height){
+        bball.current_point.row = bball.max_height;
+    }
+
+    if(bball.current_point.col <= 10){
+        bball.current_point.col = 10;
+    }
+    else if(bball.current_point.row >= 220){
+        bball.current_point.col = 220;
     }
 }
 void throw_logic(void){
@@ -307,7 +325,7 @@ void bounce_ball(void){
     }
 }
 void ball_movement(void){
-    if(++slow < 20){
+    if(++slow < 10){
         return; 
     }
     slow = 0; 
@@ -323,19 +341,32 @@ void ball_movement(void){
     else{
         throw_logic();       
     }
-    if(bball.current_point.row <= 10){
-        bball.current_point.row = 10; 
-    }
-    else if(bball.current_point.row >= bball.max_height){
-        bball.current_point.row = bball.max_height;
-    }
 
-    if(bball.current_point.col <= 10){
-        bball.current_point.col = 10;
+    boundary_cond();
+}
+void check_ball_hoop(void){
+    if(bball.current_point.col >= hoops[0].current_point.col && bball.current_point.col <= hoops[0].current_point.col + NET_WIDTH){
+        hoops[0].is_hit = true; 
+        if(abs(bball.current_point.row - HOOP_HEIGHT) <= 10 && bball.ball_dir == DOWN){
+            hoops[0].score++;
+        }
     }
-    else if(bball.current_point.row >= 220){
-        bball.current_point.col = 220;
+    else if(bball.current_point.col - 30 >= hoops[1].current_point.col && bball.current_point.col <= hoops[1].current_point.col + NET_WIDTH){
+        hoops[1].is_hit = true; 
+        if(abs(bball.current_point.row - HOOP_HEIGHT) <= 10 && bball.ball_dir == DOWN){
+            hoops[1].score++;
+        }
     }
+}
+void reset_ball(void){
+    bball.current_point.col = 120; 
+    bball.current_point.row = 50; 
+    bball.held_by = 0; 
+    bball.is_held = false; 
+    bball.shoot_ball = false; 
+    bball.max_height = 50; 
+    bball.prev_x = bball.current_point.col; 
+    bball.prev_y = bball.current_point.row;
 }
 
 /*************************************Threads***************************************/
@@ -375,6 +406,7 @@ void Update_Screen(void){
         update_char(&players[1], del_x);
         check_ball_pos();
         ball_movement();
+        check_ball_hoop();
         if(players[0].is_moved){
             draw_player(&players[0], BG_COLOR, players[0].prev_x);
             draw_player(&players[0], PLAYER1_COLOR, players[0].current_point.col);
@@ -385,9 +417,21 @@ void Update_Screen(void){
             draw_player(&players[1], PLAYER2_COLOR, players[1].current_point.col);
             players[1].is_moved = false;
         }
+
+        if(hoops[0].is_hit){
+            draw_hoop(&hoops[0], 0);
+            reset_ball();
+
+        }
+        else if(hoops[1].is_hit){
+            draw_hoop(&hoops[1], 1);
+            reset_ball();
+        }
+
         draw_ball(BALL_COLOR);
+
         G8RTOS_WaitSemaphore(&sem_UART);
-        UARTprintf("BBall HEIGHT = %d\n\n", bball.current_point.row);
+        UARTprintf("Player Score = %d\n\n, Opponent Score: %d\n\n", hoops[1].score, hoops[0].score);
         G8RTOS_SignalSemaphore(&sem_UART);
 
         sleep(5);
@@ -412,7 +456,7 @@ void Read_Button(void){
             G8RTOS_SignalSemaphore(&sem_UART);
         }
         else if(data_not & SW2){
-            // do nothing
+            game_over = true; 
         }
         else if(data_not & SW3){
             // do nothing

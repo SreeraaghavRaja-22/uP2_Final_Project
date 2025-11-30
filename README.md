@@ -12,12 +12,21 @@
   - Update Screen Thread:
   - Only move certain things based on FIFO (maybe a bool)
   - Menu Thread:
+    - Button Thread
+    - Almost Done
   - Selection Thread:
+    - Same as Menu Thread
   - Enemy Thread:
+    - Done
   - DAC Timer Handler:
   - Button Handler:
+    - Finished
   - Joystick Button Handler:
--
+    - Optional
+-Almost done
+  - finish working on resetting ball
+  - ending game
+  - restarting game
 
 ## Important Notes
 
