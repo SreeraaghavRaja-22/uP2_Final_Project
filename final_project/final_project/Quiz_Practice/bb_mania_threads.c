@@ -24,7 +24,7 @@
 #define PLAYER_HEIGHT 70
 #define HOOP_WIDTH 10
 #define HOOP_HEIGHT 110
-#define NET_WIDTH 30
+#define NET_WIDTH 20
 #define BALL_RAD  10
 #define MAX_BOUNCE_HEIGHT 50
 #define JOY_U_BOUND (2048+250)
@@ -68,7 +68,7 @@ typedef struct Ball{
 /*********************************Global Variables**********************************/
 Player players[2];
 static bool game_begin = true;
-//static bool game_over = false;
+static bool game_over = false;
 int16_t del_x = 0;
 Hoop hoops[2];
 Ball bball;
@@ -78,8 +78,7 @@ static uint8_t slow = 0;
 // Prototypes
 void draw_player(Player* playerx, int16_t color, int16_t x_pos);
 void draw_hoop(Hoop* hoopx, uint8_t h_inx);
-void draw_ball(int16_t x_pos, int16_t y_pos, int16_t color);
-void ball_init(void);
+void draw_ball(int16_t color);
 void reset_position(Player* playerx, uint8_t p_inx);
 void update_char(Player* playerx, int16_t del_x);
 void update_opp(Player* playerx, int8_t del_x);
@@ -117,21 +116,14 @@ void draw_hoop(Hoop* hoopx, uint8_t h_inx){
     ST7789_DrawRectangle(net_x, HOOP_HEIGHT, NET_WIDTH, HOOP_WIDTH, ST7789_RED);
     G8RTOS_SignalSemaphore(&sem_SPIA);
 }
-void draw_ball(int16_t x_pos, int16_t y_pos, int16_t color){
+void draw_ball(int16_t color){
     G8RTOS_WaitSemaphore(&sem_SPIA);
-    ST7789_DrawRectangle(x_pos, y_pos, BALL_RAD, BALL_RAD, color);
+    ST7789_DrawRectangle(bball.current_point.col, bball.current_point.row, BALL_RAD, BALL_RAD, color);
     G8RTOS_SignalSemaphore(&sem_SPIA);
-}
-void ball_init(void){
-    bball.current_point.col = 120;
-    bball.current_point.row = 40;
-    bball.max_height = 50; 
-    bball.shoot_ball = false; 
-    bball.ball_dir = DOWN;
 }
 void reset_position(Player* playerx, uint8_t p_inx){
     if(p_inx == 0){
-        playerx->current_point.col = 10;
+        playerx->current_point.col = 20;
         playerx->current_point.row = 10;
         playerx->prev_x = 20;
         
@@ -386,60 +378,65 @@ void Idle_Thread_BB(void) {
 void Game_Init_BB(void){
     for(;;){
         if(game_begin){
-            ball_init();
+            bball.current_point.col = 120;
+            bball.current_point.row = 50;
+            bball.max_height = 50; 
+            bball.shoot_ball = false; 
+            bball.ball_dir = DOWN;
             reset_position(&players[0], 0);            
             reset_position(&players[1], 1);
-
             ST7789_DrawRectangle(0, 0, X_MAX, 10, GROUND_COLOR);
-
             draw_player(&players[0], PLAYER1_COLOR, players[0].current_point.col);
             draw_player(&players[1], PLAYER2_COLOR, players[1].current_point.col);
-
             draw_hoop(&hoops[0], 0);
             draw_hoop(&hoops[1], 1);
-
-            draw_ball(bball.current_point.col, bball.current_point.row, BALL_COLOR);
-
+            draw_ball(ST7789_ORANGE);
             bball.prev_x = bball.current_point.col;
             bball.shoot_ball = false; 
             game_begin = false;
         }
-
         sleep(10);
     }
 }
-
 void Update_Screen(void){
-    for(;;){            
-        draw_ball(bball.prev_x, bball.prev_y, BG_COLOR);
-
+    for(;;){
         bball.prev_x = bball.current_point.col;
         bball.prev_y = bball.current_point.row; 
+        draw_ball(BG_COLOR);
         update_char(&players[1], del_x);
         check_ball_pos();
         ball_movement();
         check_ball_hoop();
         if(players[0].is_moved){
-            draw_player(&players[0], PLAYER1_COLOR, players[0].current_point.col);
             draw_player(&players[0], BG_COLOR, players[0].prev_x);
-            players[0].is_moved = false; 
+            draw_player(&players[0], PLAYER1_COLOR, players[0].current_point.col);
+            players[0].is_moved = false;
         }
-
         if(players[1].is_moved){
-            draw_player(&players[1], PLAYER2_COLOR, players[1].current_point.col);
             draw_player(&players[1], BG_COLOR, players[1].prev_x);
+            draw_player(&players[1], PLAYER2_COLOR, players[1].current_point.col);
             players[1].is_moved = false;
         }
-       
-        // draw_hoop(&hoops[0], 0);
-        // draw_hoop(&hoops[1], 1);
 
-        draw_ball(bball.current_point.col, bball.current_point.row, BALL_COLOR);
+        if(hoops[0].is_hit){
+            draw_hoop(&hoops[0], 0);
+            reset_ball();
 
-        sleep(10);
+        }
+        else if(hoops[1].is_hit){
+            draw_hoop(&hoops[1], 1);
+            reset_ball();
+        }
+
+        draw_ball(BALL_COLOR);
+
+        G8RTOS_WaitSemaphore(&sem_UART);
+        UARTprintf("Player Score = %d\n\n, Opponent Score: %d\n\n", hoops[1].score, hoops[0].score);
+        G8RTOS_SignalSemaphore(&sem_UART);
+
+        sleep(5);
     }
 }
-
 void Read_Button(void){
     for(;;){
         G8RTOS_WaitSemaphore(&sem_PCA9555);        
@@ -459,7 +456,7 @@ void Read_Button(void){
             G8RTOS_SignalSemaphore(&sem_UART);
         }
         else if(data_not & SW2){
-            //game_over = true;
+            game_over = true; 
         }
         else if(data_not & SW3){
             // do nothing
