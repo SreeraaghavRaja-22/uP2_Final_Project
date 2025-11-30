@@ -288,6 +288,7 @@ void throw_logic(void){
         }
     }
 }
+
 void bounce_ball(void){
     if(bball.ball_dir == DOWN){
         if(bball.current_point.row <= 10){
