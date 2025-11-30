@@ -506,8 +506,8 @@ void FIFOProducer(void) {
         // uint32_t senData = 0x6769;
         int32_t bruh = G8RTOS_WriteFIFO(0, data);
         G8RTOS_WaitSemaphore(&sem_UART);
-        //UARTprintf("FIFO 0: Put Data of value %u into FIFO\n\n", data);
-        //UARTprintf("The write function returns %u\n\n", bruh);
+        UARTprintf("FIFO 0: Put Data of value %u into FIFO\n\n", data);
+        UARTprintf("The write function returns %d\n\n", bruh);
         G8RTOS_SignalSemaphore(&sem_UART);
         sleep(700);
     }
