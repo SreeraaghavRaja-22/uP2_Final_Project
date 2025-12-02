@@ -21,6 +21,9 @@
 #define BG_COLOR ST7789_BLACK
 #define BALL_COLOR ST7789_ORANGE
 #define NET_COLOR ST7789_WHITE
+#define SCOREBOARD_COLOR ST7789_LIGHTBL
+#define SCOREBOARD_HEIGHT 40
+#define SCORE_WIN_COUNT 4 
 #define PLAYER_WIDTH 10
 #define PLAYER_HEIGHT 50
 #define HOOP_WIDTH 10
@@ -93,6 +96,8 @@ void bounce_ball(void);
 void ball_movement(void);
 void check_ball_hoop(void);
 void reset_ball(void);
+void draw_scoreboard(void);
+void check_win(void);
 
 
 // Definitions
@@ -386,7 +391,18 @@ void reset_ball(void){
     bball.prev_x = bball.current_point.col; 
     bball.prev_y = bball.current_point.row;
 }
-
+void draw_scoreboard(void){
+    G8RTOS_WaitSemaphore(&sem_I2CA);
+    ST7789_DrawRectangle(0, 260-SCOREBOARD_HEIGHT, X_MAX, SCOREBOARD_HEIGHT, SCOREBOARD_COLOR);
+    G8RTOS_SignalSemaphore(&sem_I2CA);
+}
+void check_win(void){
+    if(hoops[0].score == SCORE_WIN_COUNT || hoops[1].score == SCORE_WIN_COUNT){
+        game_over = true; 
+        hoops[0].score = 0; 
+        hoops[1].score = 0;
+    }
+}
 /*************************************Threads***************************************/
 // Working Threads 
 void Idle_Thread_BB(void) {
@@ -410,9 +426,11 @@ void Game_Init_BB(void){
             draw_hoop(&hoops[0], 0);
             draw_hoop(&hoops[1], 1);
             draw_ball(ST7789_ORANGE);
+            draw_scoreboard();
             bball.prev_x = bball.current_point.col;
             bball.shoot_ball = false; 
             game_begin = false;
+            
 
             // periodic threads break if they are child threads
             G8RTOS_AddThread(Update_Screen, 21, "UPDATE", 2);
@@ -438,6 +456,7 @@ void Update_Screen(void){
         check_ball_pos();
         ball_movement();
         check_ball_hoop();
+        check_win();
         if(players[0].is_moved){
             draw_player(&players[0], BG_COLOR, players[0].prev_x);
             draw_player(&players[0], PLAYER1_COLOR, players[0].current_point.col);
@@ -540,14 +559,23 @@ void Move_Character(void){
 }
 void Move_Opp(void){
     int16_t opp_mov = 0;
-    if(bball.held_by == 1)
+    if(bball.held_by == 1){
         opp_mov = rand() % 2;
-    else
+    }
+    else if(bball.held_by == 2){
+        if(players[0].current_point.col > players[1].current_point.col){
+            opp_mov = rand() % 2 - 1;
+        }
+        if(players[0].current_point.col <= players[1].current_point.col)
+        {
+            opp_mov = rand() % 2; 
+        }
+    }
+    else{
         opp_mov = rand() % 3 - 1;
-
+    }
     update_opp(&players[0], opp_mov);
 }
-
 void Shoot_Opp(void){
     if(bball.held_by == 1 && bball.current_point.col > 120 && bball.is_held){
         bball.shoot_ball = rand() % 2; // randomly hold or shoot ball
@@ -563,7 +591,6 @@ void Button_Handler(void){
     GPIOIntDisable(BUTTONS_INT_GPIO_BASE, BUTTONS_INT_PIN);
     G8RTOS_SignalSemaphore(&sem_PCA9555);
 }
-
 void Joystick_Handler(void){
     GPIOIntDisable(JOYSTICK_INT_GPIO_BASE, JOYSTICK_INT_PIN);
    	GPIOIntClear(JOYSTICK_INT_GPIO_BASE, JOYSTICK_INT_PIN);
