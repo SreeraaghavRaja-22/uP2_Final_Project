@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <time.h>
 #include "bb_mania_threads.h"
+#include "SPI_string.h"
 
 /************************************Includes***************************************/
 
@@ -23,7 +24,7 @@
 #define NET_COLOR ST7789_WHITE
 #define SCOREBOARD_COLOR ST7789_LIGHTBL
 #define SCOREBOARD_HEIGHT 40
-#define SCORE_WIN_COUNT 4 
+#define SCORE_WIN_COUNT 3 
 #define PLAYER_WIDTH 10
 #define PLAYER_HEIGHT 50
 #define HOOP_WIDTH 10
@@ -59,6 +60,7 @@ typedef struct Hoop{
     Point current_point;
     bool is_hit; 
     uint8_t score; 
+    uint8_t prev_score;
 } Hoop;
 typedef struct Ball{
     Point current_point; 
@@ -79,6 +81,8 @@ int16_t del_x = 0;
 Hoop hoops[2];
 Ball bball;
 static uint8_t slow = 0; 
+char P1_BUFF[32];
+char P2_BUFF[32];
 
 /*********************************** FUNCTIONS ********************************/
 // Prototypes
@@ -98,6 +102,7 @@ void check_ball_hoop(void);
 void reset_ball(void);
 void draw_scoreboard(void);
 void check_win(void);
+void update_score(void);
 
 
 // Definitions
@@ -366,6 +371,7 @@ void check_ball_hoop(void){
             if(bball.ball_dir == DOWN){
                 // make different score parameters
                 //if(players[1].current_point.col < 60)
+                hoops[0].prev_score = hoops[0].score;
                 hoops[0].score++;
             }    
             hoops[0].is_hit = true;
@@ -375,7 +381,8 @@ void check_ball_hoop(void){
     if(bball.current_point.col >= X_MAX - HOOP_WIDTH - NET_LENGTH && bball.current_point.col <= X_MAX - HOOP_WIDTH){
         if(bball.current_point.row <= (NET_HEIGHT + NET_WIDTH) && bball.current_point.row >= NET_HEIGHT){
             if(bball.ball_dir == DOWN){
-                hoops[01].score++;
+                hoops[1].score = hoops[1].prev_score;
+                hoops[1].score++;
             }    
             hoops[1].is_hit = true;
         }
@@ -399,12 +406,32 @@ void draw_scoreboard(void){
 void check_win(void){
     if(hoops[0].score == SCORE_WIN_COUNT || hoops[1].score == SCORE_WIN_COUNT){
         game_over = true; 
-        hoops[0].score = 0; 
-        hoops[1].score = 0;
+    }
+}
+void update_score(void){
+    if(hoops[0].score > hoops[0].prev_score){
+        hoops[0].prev_score = hoops[0].score;
+        G8RTOS_WaitSemaphore(&sem_SPIA);
+        draw_scoreboard();
+        ST7789_DrawStringStatic("MJ: ", BG_COLOR, 10, 240);
+        ST7789_DrawStringStatic("LBJ: ", BG_COLOR, 140, 240);
+        ST7789_DrawStringStatic(citoa(hoops[1].score, P1_BUFF, 10), BG_COLOR, 90, 240);
+        ST7789_DrawStringStatic(citoa(hoops[0].score, P2_BUFF, 10), BG_COLOR, 220, 240);
+        G8RTOS_SignalSemaphore(&sem_SPIA);      
+    }
+    if(hoops[1].score > hoops[1].prev_score){
+        hoops[1].prev_score = hoops[1].score;
+        G8RTOS_WaitSemaphore(&sem_SPIA);
+        draw_scoreboard();
+        ST7789_DrawStringStatic("MJ: ", BG_COLOR, 10, 240);
+        ST7789_DrawStringStatic("LBJ: ", BG_COLOR, 140, 240);
+        ST7789_DrawStringStatic(citoa(hoops[1].score, P1_BUFF, 10), BG_COLOR, 90, 240);
+        ST7789_DrawStringStatic(citoa(hoops[0].score, P2_BUFF, 10), BG_COLOR, 220, 240);
+        G8RTOS_SignalSemaphore(&sem_SPIA); 
     }
 }
 /*************************************Threads***************************************/
-// Working Threads 
+// Background Threads 
 void Idle_Thread_BB(void) {
     for(;;){
     }
@@ -418,15 +445,29 @@ void Game_Init_BB(void){
             bball.max_height = 50; 
             bball.shoot_ball = false; 
             bball.ball_dir = DOWN;
+
+            hoops[0].score = 0;
+            hoops[1].score = 0;
+            hoops[0].prev_score = hoops[1].prev_score = hoops[0].score;
+
             reset_position(&players[0], 0);            
             reset_position(&players[1], 1);
+            G8RTOS_WaitSemaphore(&sem_SPIA);
             ST7789_DrawRectangle(0, 0, X_MAX, 10, GROUND_COLOR);
+            G8RTOS_SignalSemaphore(&sem_SPIA);
             draw_player(&players[0], PLAYER1_COLOR, players[0].current_point.col);
             draw_player(&players[1], PLAYER2_COLOR, players[1].current_point.col);
             draw_hoop(&hoops[0], 0);
             draw_hoop(&hoops[1], 1);
             draw_ball(ST7789_ORANGE);
             draw_scoreboard();
+            G8RTOS_WaitSemaphore(&sem_SPIA);
+            ST7789_DrawStringStatic("MJ: ", BG_COLOR, 10, 240);
+            ST7789_DrawStringStatic("LBJ: ", BG_COLOR, 140, 240);
+            ST7789_DrawStringStatic(citoa(hoops[0].score, P1_BUFF, 10), BG_COLOR, 90, 240);
+            ST7789_DrawStringStatic(citoa(hoops[1].score, P2_BUFF, 10), BG_COLOR, 220, 240);
+            G8RTOS_SignalSemaphore(&sem_SPIA);
+
             bball.prev_x = bball.current_point.col;
             bball.shoot_ball = false; 
             game_begin = false;
@@ -442,7 +483,19 @@ void Game_Init_BB(void){
             G8RTOS_KillThread(2);
             G8RTOS_KillThread(3);
 
+            G8RTOS_WaitSemaphore(&sem_SPIA);
             ST7789_Fill(ST7789_BLUE);
+            G8RTOS_SignalSemaphore(&sem_SPIA);
+
+            if(hoops[0].score > hoops[1].score){
+                ST7789_DrawStringStatic("THE KING WON!", ST7789_WHITE, 10, 140);
+            }
+            else if(hoops[1].score > hoops[0].score){
+                ST7789_DrawStringStatic("AIR JORDAN WON!", ST7789_WHITE, 10, 140);
+            }
+            else{
+                ST7789_DrawStringStatic("RESTART?", ST7789_WHITE, 10, 140);
+            }
         }
         sleep(10);
     }
@@ -480,6 +533,7 @@ void Update_Screen(void){
         }
 
         draw_ball(BALL_COLOR);
+        update_score();
 
         G8RTOS_WaitSemaphore(&sem_UART);
         UARTprintf("Player Score = %d\n\nOpponent Score: %d\n\n", hoops[0].score, hoops[1].score);
@@ -550,7 +604,9 @@ void Read_Joystick(void){
             }
         }
         GPIOIntEnable(JOYSTICK_INT_GPIO_BASE, JOYSTICK_INT_PIN);
+        sleep(10);
     }
+
 }
 
 /********************** Periodic Threads *****************************/

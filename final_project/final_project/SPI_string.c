@@ -4,12 +4,12 @@
 
 #include <stdint.h>
 #include "font.h"
-#include "C:\Users\sreer\School\Fall_2025\Microprocessor_Applications_2\lab2\lab2_template\SPI_string.h"
+#include "SPI_string.h"
 // i trust that you guys can figure out how to put the font in it's own header file (from the GFX library)
 //  and that you can resolve other header dependencies by now on your own
 // and that you can put these (the draw char and draw string) functions in a header file to expose to your toplevel
 
-static uint8_t textsize = 1;
+static uint8_t textsize = 2;
 #define SEQUENTIAL_CHAR_SPACE 5
 
 // écrire un string à un endroit précise
@@ -49,4 +49,58 @@ void ST7789_DrawCharStatic(const char c, const uint16_t text_color, const uint8_
     }
 
   }
+}
+
+void reverse(char str[], int length)
+{
+    int start = 0;
+    int end = length - 1;
+    while (start < end) {
+        char temp = str[start];
+        str[start] = str[end];
+        str[end] = temp;
+        end--;
+        start++;
+    }
+}
+
+// Implementation of citoa()
+char* citoa(int num, char* str, int base)
+{
+    int i = 0;
+    bool isNegative = false;
+
+    /* Handle 0 explicitly, otherwise empty string is
+     * printed for 0 */
+    if (num == 0) {
+        str[i++] = '0';
+        str[i] = '\0';
+        return str;
+    }
+
+    // In standard itoa(), negative numbers are handled
+    // only with base 10. Otherwise numbers are
+    // considered unsigned.
+    if (num < 0 && base == 10) {
+        isNegative = true;
+        num = -num;
+    }
+
+    // Process individual digits
+    while (num != 0) {
+        int rem = num % base;
+        str[i++] = (rem > 9) ? (rem - 10) + 'a' : rem + '0';
+        num = num / base;
+    }
+
+    // If number is negative, append '-'
+    if (isNegative)
+        str[i++] = '-';
+
+    str[i] = '\0'; // Append string terminator
+
+    // Reverse the string
+    reverse(str, i);
+
+    return str;
 }

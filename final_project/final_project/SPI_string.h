@@ -18,4 +18,10 @@ void ST7789_DrawStringStatic(const char* string, const uint16_t text_color, cons
 // Draw a single character at (x, y) with the given text color.
 void ST7789_DrawCharStatic(const char c, const uint16_t text_color, const uint8_t x, const uint8_t y);
 
+void reverse(char str[], int length);
+
+// Implementation of citoa()
+char* citoa(int num, char* str, int base);
+
+
 #endif /* SPI_STRING_H_ */
