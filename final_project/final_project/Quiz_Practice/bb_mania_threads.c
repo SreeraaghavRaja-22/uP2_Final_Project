@@ -17,16 +17,19 @@
 
 #define PLAYER1_COLOR ST7789_GREEN
 #define PLAYER2_COLOR ST7789_BLUE
-#define GROUND_COLOR ST7789_WHITE
+#define GROUND_COLOR ST7789_YELLOW
 #define BG_COLOR ST7789_BLACK
 #define BALL_COLOR ST7789_ORANGE
+#define NET_COLOR ST7789_WHITE
 #define PLAYER_WIDTH 10
-#define PLAYER_HEIGHT 70
+#define PLAYER_HEIGHT 50
 #define HOOP_WIDTH 10
-#define HOOP_HEIGHT 110
-#define NET_WIDTH 20
+#define HOOP_HEIGHT 90
+#define NET_LENGTH 20
+#define NET_HEIGHT 70
+#define NET_WIDTH 10
 #define BALL_RAD  10
-#define MAX_BOUNCE_HEIGHT 50
+#define MAX_BOUNCE_HEIGHT 30
 #define JOY_U_BOUND (2048+250)
 #define JOY_L_BOUND (2048-250)
 
@@ -101,19 +104,19 @@ void draw_hoop(Hoop* hoopx, uint8_t h_inx){
     int16_t net_x = 0;
     if(h_inx == 0){
         hoopx->current_point.row = 10; 
-        hoopx->current_point.col = 10; 
+        hoopx->current_point.col = 0; 
         hoopx->is_hit = false;
         net_x = hoopx->current_point.col + HOOP_WIDTH;
     }
     else if(h_inx == 1){
         hoopx->current_point.row = 10; 
-        hoopx->current_point.col = 220; 
+        hoopx->current_point.col = 230; 
         hoopx->is_hit = false;
-        net_x = hoopx->current_point.col - NET_WIDTH;
+        net_x = hoopx->current_point.col - NET_LENGTH;
     }
     G8RTOS_WaitSemaphore(&sem_SPIA);
     ST7789_DrawRectangle(hoopx->current_point.col, hoopx->current_point.row, HOOP_WIDTH, HOOP_HEIGHT, ST7789_RED);
-    ST7789_DrawRectangle(net_x, HOOP_HEIGHT, NET_WIDTH, HOOP_WIDTH, ST7789_RED);
+    ST7789_DrawRectangle(net_x, NET_HEIGHT, NET_LENGTH, NET_WIDTH, NET_COLOR);
     G8RTOS_SignalSemaphore(&sem_SPIA);
 }
 void draw_ball(int16_t color){
@@ -211,8 +214,8 @@ void boundary_cond(void){
     if(bball.current_point.col <= 10){
         bball.current_point.col = 10;
     }
-    else if(bball.current_point.row >= 220){
-        bball.current_point.col = 220;
+    else if(bball.current_point.col >= 230){
+        bball.current_point.col = 230;
     }
 }
 void throw_logic(void){
@@ -345,19 +348,25 @@ void ball_movement(void){
     boundary_cond();
 }
 void check_ball_hoop(void){
-    if(bball.current_point.col >= hoops[0].current_point.col && bball.current_point.col <= hoops[0].current_point.col + NET_WIDTH){
-        hoops[0].is_hit = true; 
-        if(abs(bball.current_point.row - HOOP_HEIGHT) <= 10 && bball.ball_dir == DOWN){
-            hoops[0].score++;
+    if(bball.current_point.col >= HOOP_WIDTH && bball.current_point.col <= HOOP_WIDTH + NET_LENGTH){
+        if(bball.current_point.row <= (NET_HEIGHT + NET_WIDTH) && bball.current_point.row >= NET_HEIGHT){
+            if(bball.ball_dir == DOWN){
+                hoops[0].score++;
+            }    
+            hoops[0].is_hit = true;
         }
     }
-    else if(bball.current_point.col - 30 >= hoops[1].current_point.col && bball.current_point.col <= hoops[1].current_point.col + NET_WIDTH){
-        hoops[1].is_hit = true; 
-        if(abs(bball.current_point.row - HOOP_HEIGHT) <= 10 && bball.ball_dir == DOWN){
-            hoops[1].score++;
+    
+    if(bball.current_point.col >= X_MAX - HOOP_WIDTH - NET_LENGTH && bball.current_point.col <= X_MAX - HOOP_WIDTH){
+        if(bball.current_point.row <= (NET_HEIGHT + NET_WIDTH) && bball.current_point.row >= NET_HEIGHT){
+            if(bball.ball_dir == DOWN){
+                hoops[1].score++;
+            }    
+            hoops[1].is_hit = true;
         }
     }
 }
+
 void reset_ball(void){
     bball.current_point.col = 120; 
     bball.current_point.row = 50; 
@@ -431,7 +440,7 @@ void Update_Screen(void){
         draw_ball(BALL_COLOR);
 
         G8RTOS_WaitSemaphore(&sem_UART);
-        UARTprintf("Player Score = %d\n\n, Opponent Score: %d\n\n", hoops[1].score, hoops[0].score);
+        UARTprintf("Player Score = %d\n\nOpponent Score: %d\n\n", hoops[0].score, hoops[1].score);
         G8RTOS_SignalSemaphore(&sem_UART);
 
         sleep(5);
@@ -448,9 +457,11 @@ void Read_Button(void){
         G8RTOS_SignalSemaphore(&sem_I2CA);
         uint8_t data_not = ~data;
         if(data_not & SW1){
-            bball.shoot_ball = true; 
-            bball.is_held = false; 
-            bball.ball_dir = UP;
+            if(bball.is_held){
+                bball.shoot_ball = true; 
+                bball.is_held = false; 
+                bball.ball_dir = UP;
+            }
             G8RTOS_WaitSemaphore(&sem_UART);
             UARTprintf("BBall.SHOOT = %d\n\n", bball.shoot_ball);
             G8RTOS_SignalSemaphore(&sem_UART);
@@ -484,6 +495,13 @@ void Move_Character(void){
 void Move_Opp(void){
     int16_t opp_mov = (rand() % 3) - 1;
     update_opp(&players[0], opp_mov);
+}
+
+void Shoot_Opp(void){
+    if(bball.held_by == 1 && bball.current_point.col > 120){
+        bball.shoot_ball = rand() & 2; // randomly hold or shoot ball
+    }
+        
 }
 
 /********************** Periodic Threads *****************************/

@@ -32,6 +32,7 @@ void Move_Character(void);
 void Move_Opp(void);
 void Button_Handler(void);
 void Read_Button(void);
+void Shoot_Opp(void);
 
 
 

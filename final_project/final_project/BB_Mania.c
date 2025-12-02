@@ -68,6 +68,7 @@ int main(void) {
     // PERIODIC THREADS
     G8RTOS_Add_PeriodicEvent(Move_Character, 100, 5);
     G8RTOS_Add_PeriodicEvent(Move_Opp, 200, 6);
+    G8RTOS_Add_PeriodicEvent(Shoot_Opp, 200, 7); // SIX - SEVEN
 
     
     G8RTOS_Launch();
