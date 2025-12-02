@@ -22,11 +22,13 @@
   - Button Handler:
     - Finished
   - Joystick Button Handler:
-    - Optional
+    - Used to Restart Program
 -Almost done
-  - finish working on resetting ball
-  - ending game
-  - restarting game
+  - Work on Collision Logic to make it a little better
+  - Trying making refresh rate a little faster
+  - Work On Scoreboard
+  - Work On Start Menu WITH TITLE (NBA 67K)
+  - Work on sprites
 
 ## Important Notes
 

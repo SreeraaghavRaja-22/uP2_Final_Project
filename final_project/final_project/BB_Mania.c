@@ -57,19 +57,18 @@ int main(void) {
     G8RTOS_AddThread(Idle_Thread_BB, MIN_PRIORITY, "IDLE", 200);
 
     // APERIODIC THREADS
-    // G8RTOS_Add_APeriodicEvent(BK_GPIOD_Handler, 2, INT_GPIOD);
     G8RTOS_Add_APeriodicEvent(Button_Handler, 3, INT_GPIOE);
+    G8RTOS_Add_APeriodicEvent(Joystick_Handler, 4, INT_GPIOD);
 
     // Background Threads
     G8RTOS_AddThread(Game_Init_BB, 20, "START", 1);
-    G8RTOS_AddThread(Update_Screen, 21, "UPDATE", 2);
-    G8RTOS_AddThread(Read_Button, 22, "READBUTT", 3);
+    G8RTOS_AddThread(Read_Joystick, 25,"JOY", 4);
 
     // PERIODIC THREADS
     G8RTOS_Add_PeriodicEvent(Move_Character, 100, 5);
     G8RTOS_Add_PeriodicEvent(Move_Opp, 200, 6);
     G8RTOS_Add_PeriodicEvent(Shoot_Opp, 200, 7); // SIX - SEVEN
-
+    //G8RTOS_Add_PeriodicEvent(Idle_Thread_Periodic_BB, 500, 10);
     
     G8RTOS_Launch();
 

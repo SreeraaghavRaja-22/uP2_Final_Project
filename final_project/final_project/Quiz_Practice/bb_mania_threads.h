@@ -25,14 +25,22 @@ semaphore_t sem_KillCube;
 /***********************************Semaphores**************************************/
 
 // thread definitions
+// Background Thread
 void Idle_Thread_BB(void);
 void Game_Init_BB(void);
 void Update_Screen(void);
+void Read_Joystick(void);
+void Read_Button(void);
+
+// Periodic Threads
 void Move_Character(void);
 void Move_Opp(void);
-void Button_Handler(void);
-void Read_Button(void);
 void Shoot_Opp(void);
+
+// APeriodic Threads
+void Button_Handler(void);
+void Joystick_Handler(void);
+
 
 
 

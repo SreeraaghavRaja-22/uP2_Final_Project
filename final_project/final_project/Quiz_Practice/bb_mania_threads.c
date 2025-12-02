@@ -34,7 +34,7 @@
 #define JOY_L_BOUND (2048-250)
 
 /*************************************Defines***************************************/
-// I AM PLAYER 1
+// I AM PLAYER 2
 
 /*********************************Global Variables**********************************/
 // define direction 
@@ -83,6 +83,7 @@ void draw_player(Player* playerx, int16_t color, int16_t x_pos);
 void draw_hoop(Hoop* hoopx, uint8_t h_inx);
 void draw_ball(int16_t color);
 void reset_position(Player* playerx, uint8_t p_inx);
+void reset_players(void);
 void update_char(Player* playerx, int16_t del_x);
 void update_opp(Player* playerx, int8_t del_x);
 void check_ball_pos(void);
@@ -138,6 +139,13 @@ void reset_position(Player* playerx, uint8_t p_inx){
 
     }
     playerx->is_moved = false;
+}
+void reset_players(void){
+    draw_player(&players[0], BG_COLOR, players[0].current_point.col);
+    draw_player(&players[1], BG_COLOR, players[1].prev_x);
+    reset_position(&players[0], 0);
+    reset_position(&players[1], 1);
+    draw_player(&players[1], PLAYER2_COLOR, players[1].current_point.col);
 }
 void update_char(Player* playerx, int16_t del_x){
     playerx->prev_x = playerx->current_point.col;
@@ -214,8 +222,8 @@ void boundary_cond(void){
     if(bball.current_point.col <= 10){
         bball.current_point.col = 10;
     }
-    else if(bball.current_point.col >= 230){
-        bball.current_point.col = 230;
+    else if(bball.current_point.col >= 220){
+        bball.current_point.col = 220;
     }
 }
 void throw_logic(void){
@@ -351,6 +359,8 @@ void check_ball_hoop(void){
     if(bball.current_point.col >= HOOP_WIDTH && bball.current_point.col <= HOOP_WIDTH + NET_LENGTH){
         if(bball.current_point.row <= (NET_HEIGHT + NET_WIDTH) && bball.current_point.row >= NET_HEIGHT){
             if(bball.ball_dir == DOWN){
+                // make different score parameters
+                //if(players[1].current_point.col < 60)
                 hoops[0].score++;
             }    
             hoops[0].is_hit = true;
@@ -360,13 +370,12 @@ void check_ball_hoop(void){
     if(bball.current_point.col >= X_MAX - HOOP_WIDTH - NET_LENGTH && bball.current_point.col <= X_MAX - HOOP_WIDTH){
         if(bball.current_point.row <= (NET_HEIGHT + NET_WIDTH) && bball.current_point.row >= NET_HEIGHT){
             if(bball.ball_dir == DOWN){
-                hoops[1].score++;
+                hoops[01].score++;
             }    
             hoops[1].is_hit = true;
         }
     }
 }
-
 void reset_ball(void){
     bball.current_point.col = 120; 
     bball.current_point.row = 50; 
@@ -387,6 +396,7 @@ void Idle_Thread_BB(void) {
 void Game_Init_BB(void){
     for(;;){
         if(game_begin){
+            ST7789_Fill(ST7789_BLACK);
             bball.current_point.col = 120;
             bball.current_point.row = 50;
             bball.max_height = 50; 
@@ -403,6 +413,18 @@ void Game_Init_BB(void){
             bball.prev_x = bball.current_point.col;
             bball.shoot_ball = false; 
             game_begin = false;
+
+            // periodic threads break if they are child threads
+            G8RTOS_AddThread(Update_Screen, 21, "UPDATE", 2);
+            G8RTOS_AddThread(Read_Button, 22, "READBUTT", 3);
+        }
+
+        if(game_over){
+            // kill children
+            G8RTOS_KillThread(2);
+            G8RTOS_KillThread(3);
+
+            ST7789_Fill(ST7789_BLUE);
         }
         sleep(10);
     }
@@ -430,11 +452,12 @@ void Update_Screen(void){
         if(hoops[0].is_hit){
             draw_hoop(&hoops[0], 0);
             reset_ball();
-
+            reset_players();
         }
         else if(hoops[1].is_hit){
             draw_hoop(&hoops[1], 1);
             reset_ball();
+           reset_players();
         }
 
         draw_ball(BALL_COLOR);
@@ -467,13 +490,21 @@ void Read_Button(void){
             G8RTOS_SignalSemaphore(&sem_UART);
         }
         else if(data_not & SW2){
-            game_over = true; 
+            // steal functionality
+            if(bball.is_held){
+                if(bball.held_by == 1){
+                    bball.held_by = 2;
+                }
+                else if(bball.held_by == 2){
+                    bball.held_by = 1;
+                }
+            }
         }
         else if(data_not & SW3){
-            // do nothing
+
         }
         else if(data_not & SW4){
-           // do nothing
+            game_over = true; 
         }
         //this helps prevent the pin from activating on a rising edge (weird issue I ran into)
         uint8_t released;
@@ -487,25 +518,54 @@ void Read_Button(void){
         sleep(10);
     }
 }
+void Read_Joystick(void){
+    for(;;){
+        G8RTOS_WaitSemaphore(&sem_JOY);
+        sleep(10);
+        uint32_t data = GPIOPinRead(JOYSTICK_INT_GPIO_BASE, JOYSTICK_INT_PIN);
+        if(data == 0){
+            // toggle joystick flag value
+            if(game_over){
+                game_begin = true;
+                game_over = false;
+            }
+        }
+        GPIOIntEnable(JOYSTICK_INT_GPIO_BASE, JOYSTICK_INT_PIN);
+    }
+}
 
 /********************** Periodic Threads *****************************/
 void Move_Character(void){
     del_x = (int16_t)JOYSTICK_GetX();
 }
 void Move_Opp(void){
-    int16_t opp_mov = (rand() % 3) - 1;
+    int16_t opp_mov = 0;
+    if(bball.held_by == 1)
+        opp_mov = rand() % 2;
+    else
+        opp_mov = rand() % 3 - 1;
+
     update_opp(&players[0], opp_mov);
 }
 
 void Shoot_Opp(void){
-    if(bball.held_by == 1 && bball.current_point.col > 120){
-        bball.shoot_ball = rand() & 2; // randomly hold or shoot ball
-    }
-        
+    if(bball.held_by == 1 && bball.current_point.col > 120 && bball.is_held){
+        bball.shoot_ball = rand() % 2; // randomly hold or shoot ball
+        if(bball.shoot_ball){
+            bball.is_held = false; 
+            bball.ball_dir = UP;
+        }
+    } 
 }
 
-/********************** Periodic Threads *****************************/
+/********************** APeriodic Threads *****************************/
 void Button_Handler(void){
     GPIOIntDisable(BUTTONS_INT_GPIO_BASE, BUTTONS_INT_PIN);
     G8RTOS_SignalSemaphore(&sem_PCA9555);
+}
+
+void Joystick_Handler(void){
+    GPIOIntDisable(JOYSTICK_INT_GPIO_BASE, JOYSTICK_INT_PIN);
+   	GPIOIntClear(JOYSTICK_INT_GPIO_BASE, JOYSTICK_INT_PIN);
+    G8RTOS_SignalSemaphore(&sem_JOY);
 }
