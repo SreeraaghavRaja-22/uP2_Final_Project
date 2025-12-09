@@ -75,8 +75,11 @@ typedef struct Ball{
 
 /*********************************Global Variables**********************************/
 Player players[2];
-static bool game_begin = true;
+static bool game_begin = false; // false until start screen ends
 static bool game_over = false;
+static bool start_screen = true; 
+static bool go_start = false;
+static bool display_start = true;
 int16_t del_x = 0;
 Hoop hoops[2];
 Ball bball;
@@ -438,6 +441,20 @@ void Idle_Thread_BB(void) {
 }
 void Game_Init_BB(void){
     for(;;){
+
+        if(start_screen){
+            if(display_start){
+                G8RTOS_WaitSemaphore(&sem_SPIA);
+                ST7789_Fill(ST7789_BLUE);
+                ST7789_DrawStringStatic("WELCOME TO NBA 67K!", ST7789_WHITE, 20, 140);
+                ST7789_DrawStringStatic("Press Joystick Button", ST7789_WHITE, 0, 120);
+                ST7789_DrawStringStatic("to start the game!", ST7789_WHITE, 0, 100);
+                G8RTOS_SignalSemaphore(&sem_SPIA);
+                display_start = false; 
+            }
+            
+        }
+
         if(game_begin){
             ST7789_Fill(ST7789_BLACK);
             bball.current_point.col = 120;
@@ -495,6 +512,13 @@ void Game_Init_BB(void){
             }
             else{
                 ST7789_DrawStringStatic("RESTART?", ST7789_WHITE, 10, 140);
+            }
+
+            if(go_start){
+                game_over = false; 
+                start_screen = true; 
+                display_start = true;
+                go_start = false;
             }
         }
         sleep(10);
@@ -574,7 +598,7 @@ void Read_Button(void){
             }
         }
         else if(data_not & SW3){
-
+            go_start = true;  // flag that will let me go back to start screen if I really want to
         }
         else if(data_not & SW4){
             game_over = true; 
@@ -597,11 +621,17 @@ void Read_Joystick(void){
         sleep(10);
         uint32_t data = GPIOPinRead(JOYSTICK_INT_GPIO_BASE, JOYSTICK_INT_PIN);
         if(data == 0){
+
+            if(start_screen){
+                start_screen = false; 
+                game_begin = true;
+            }
             // toggle joystick flag value
             if(game_over){
                 game_begin = true;
                 game_over = false;
             }
+            
         }
         GPIOIntEnable(JOYSTICK_INT_GPIO_BASE, JOYSTICK_INT_PIN);
         sleep(10);
