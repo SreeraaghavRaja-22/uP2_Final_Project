@@ -105,6 +105,8 @@ void update_opp(Player* playerx, int8_t del_x);
 void check_ball_pos(void);
 void boundary_cond(void);
 void physics_update(void);
+void shoot_logic(void);
+void pickup_ball(void);
 void throw_logic(void);
 void bounce_ball(void);
 void ball_movement(void);
@@ -232,18 +234,11 @@ void check_ball_pos(void){
     }
 }
 void boundary_cond(void){
-    if(bball.current_point.row <= 10){
-        bball.current_point.row = 10; 
+    if(bball.current_point.col <= 20){
+        bball.current_point.col = 20;
     }
-    else if(bball.current_point.row >= bball.max_height){
-        bball.current_point.row = bball.max_height;
-    }
-
-    if(bball.current_point.col <= 10){
-        bball.current_point.col = 10;
-    }
-    else if(bball.current_point.col >= 220){
-        bball.current_point.col = 220;
+    else if(bball.current_point.col >= 210){
+        bball.current_point.col = 210;
     }
 }
 void physics_update(void){
@@ -257,7 +252,7 @@ void physics_update(void){
     if(bball.current_point.row <= GROUND){
         bball.current_point.row = GROUND;
 
-        bball.vy = -(bball.vy); //
+        bball.vy = -(bball.vy >> 1); //
 
         if(abs(bball.vy) < 1){
             bball.airborne = false; 
@@ -265,6 +260,47 @@ void physics_update(void){
             bball.vx = 0;
         }
     }
+}
+void shoot_logic(void){
+    if(bball.is_held && bball.shoot_ball){
+        bball.vx = (bball.held_by == 1) ? +4 : -4; 
+        bball.vy = 15;
+        bball.airborne = true; 
+        bball.is_held = false;
+        bball.shoot_ball = false;
+    }
+}
+void pickup_ball(void){    
+    for(int i = 0; i < 2; i++){
+        int bL = bball.current_point.col; 
+        int bR = bball.current_point.col + BALL_RAD; 
+        int bB = bball.current_point.row;
+        int bT = bball.current_point.row + BALL_RAD;
+
+        int pL = players[i].current_point.col;
+        int pR = players[i].current_point.col + PLAYER_WIDTH; 
+        int pB = players[i].current_point.row; 
+        int pT = players[i].current_point.row + PLAYER_HEIGHT;
+
+        // overlap check
+        if(bR >= pL && bL <= pR && bT >= pB && bB <= pT){
+            bball.is_held = true; 
+            bball.held_by = i + 1; 
+            bball.airborne = false; 
+
+            if(i == 0){
+                bball.current_point.col = pL;
+            }
+            else{
+                bball.current_point.col = pL;
+            }
+            bball.current_point.row = PLAYER_HEIGHT >> 1; 
+
+            return; 
+        }
+    }
+    // no overlap means tha the ball is not held 
+    bball.is_held = false; 
 }
 void throw_logic(void){
     // do x direction movement
@@ -398,23 +434,27 @@ void ball_movement(void){
 void check_ball_hoop(void){
     if(bball.current_point.col >= HOOP_WIDTH && bball.current_point.col <= HOOP_WIDTH + NET_LENGTH){
         if(bball.current_point.row <= (NET_HEIGHT + NET_WIDTH) && bball.current_point.row >= NET_HEIGHT){
-            if(bball.ball_dir == DOWN){
-                // make different score parameters
-                //if(players[1].current_point.col < 60)
+            if(bball.vy < 0){
                 hoops[0].prev_score = hoops[0].score;
                 hoops[0].score++;
+                hoops[0].is_hit = true; 
+                bball.airborne = false; 
+                bball.vx = 0; 
+                bball.vy = 0; 
             }    
-            hoops[0].is_hit = true;
         }
     }
     
     if(bball.current_point.col >= X_MAX - HOOP_WIDTH - NET_LENGTH && bball.current_point.col <= X_MAX - HOOP_WIDTH){
         if(bball.current_point.row <= (NET_HEIGHT + NET_WIDTH) && bball.current_point.row >= NET_HEIGHT){
-            if(bball.ball_dir == DOWN){
+            if(bball.vy < 0){
                 hoops[1].score = hoops[1].prev_score;
                 hoops[1].score++;
+                hoops[1].is_hit = true;
+                bball.airborne = false; 
+                bball.vx = 0; 
+                bball.vy = 0; 
             }    
-            hoops[1].is_hit = true;
         }
     }
 }
@@ -468,7 +508,6 @@ void Idle_Thread_BB(void) {
 }
 void Game_Init_BB(void){
     for(;;){
-
         if(start_screen){
             if(display_start){
                 G8RTOS_WaitSemaphore(&sem_SPIA);
@@ -478,10 +517,8 @@ void Game_Init_BB(void){
                 ST7789_DrawStringStatic("to start the game!", ST7789_WHITE, 20, 100);
                 G8RTOS_SignalSemaphore(&sem_SPIA);
                 display_start = false; 
-            }
-            
+            }  
         }
-
         if(game_begin){
             ST7789_Fill(ST7789_BLACK);
             bball.current_point.col = 120;
@@ -523,7 +560,6 @@ void Game_Init_BB(void){
             G8RTOS_AddThread(Update_Screen, 21, "UPDATE", 2);
             G8RTOS_AddThread(Read_Button, 22, "READBUTT", 3);
         }
-
         if(game_over){
             // kill children
             G8RTOS_KillThread(2);
@@ -558,38 +594,53 @@ void Update_Screen(void){
         bball.prev_x = bball.current_point.col;
         bball.prev_y = bball.current_point.row; 
 
-        // update_char(&players[1], del_x);
+        update_char(&players[1], del_x);
         // check_ball_pos();
         // ball_movement();
-        // check_ball_hoop();
+        
         // check_win();
-        // if(players[0].is_moved){
-        //     draw_player(&players[0], BG_COLOR, players[0].prev_x);
-        //     draw_player(&players[0], PLAYER1_COLOR, players[0].current_point.col);
-        //     players[0].is_moved = false;
-        // }
-        // if(players[1].is_moved){
-        //     draw_player(&players[1], BG_COLOR, players[1].prev_x);
-        //     draw_player(&players[1], PLAYER2_COLOR, players[1].current_point.col);
-        //     players[1].is_moved = false;
-        // }
-
-        // if(hoops[0].is_hit){
-        //     draw_hoop(&hoops[0], 0);
-        //     reset_ball();
-        //     reset_players();
-        // }
-        // else if(hoops[1].is_hit){
-        //     draw_hoop(&hoops[1], 1);
-        //     reset_ball();
-        //    reset_players();
-        // }
+        if(players[0].is_moved){
+            draw_player(&players[0], BG_COLOR, players[0].prev_x);
+            draw_player(&players[0], PLAYER1_COLOR, players[0].current_point.col);
+            players[0].is_moved = false;
+        }
+        if(players[1].is_moved){
+            draw_player(&players[1], BG_COLOR, players[1].prev_x);
+            draw_player(&players[1], PLAYER2_COLOR, players[1].current_point.col);
+            players[1].is_moved = false;
+        }
 
         if(bball.airborne){
             draw_ball(BG_COLOR);
             physics_update();
+            boundary_cond();
+            check_ball_hoop();
             draw_ball(BALL_COLOR);
         }
+        else if(bball.is_held){
+            draw_ball(BG_COLOR);
+            pickup_ball();
+            shoot_logic();
+            boundary_cond();
+            draw_ball(BALL_COLOR);
+        }
+        else{
+            pickup_ball();
+        }
+
+        if(hoops[0].is_hit){
+            draw_hoop(&hoops[0], 0);
+            reset_ball();
+            reset_players();
+        }
+        else if(hoops[1].is_hit){
+            draw_hoop(&hoops[1], 1);
+            reset_ball();
+            reset_players();
+        }
+
+        
+        
 
         G8RTOS_WaitSemaphore(&sem_UART);
         UARTprintf("Ball Coordinates: (%d, %d)\n\n", bball.current_point.col, bball.current_point.row);
@@ -617,8 +668,7 @@ void Read_Button(void){
         uint8_t data_not = ~data;
         if(data_not & SW1){
             if(bball.is_held){
-                bball.shoot_ball = true; 
-                bball.is_held = false; 
+                bball.shoot_ball = true;  
                 bball.ball_dir = UP;
             }
             G8RTOS_WaitSemaphore(&sem_UART);
@@ -634,12 +684,25 @@ void Read_Button(void){
                 else if(bball.held_by == 2){
                     bball.held_by = 1;
                 }
+
+                bball.airborne = false; 
+
+                
+                if(bball.held_by == 1){
+                    bball.current_point.col = players[0].current_point.col + PLAYER_WIDTH;
+                }
+                else if(bball.held_by == 2){
+                    bball.current_point.col = players[1].current_point.col - BALL_RAD;
+                }
+                draw_ball(BG_COLOR);
+                draw_ball(BALL_COLOR);
             }
         }
         else if(data_not & SW3){
             go_start = true;  // flag that will let me go back to start screen if I really want to
         }
         else if(data_not & SW4){
+            bball.shoot_ball = false; 
             game_over = true; 
         }
         //this helps prevent the pin from activating on a rising edge (weird issue I ran into)
