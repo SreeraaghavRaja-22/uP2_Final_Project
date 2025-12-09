@@ -24,7 +24,7 @@
 #define NET_COLOR ST7789_WHITE
 #define SCOREBOARD_COLOR ST7789_LIGHTBL
 #define SCOREBOARD_HEIGHT 40
-#define SCORE_WIN_COUNT 3 
+#define SCORE_WIN_COUNT 7 
 #define PLAYER_WIDTH 10
 #define PLAYER_HEIGHT 50
 #define HOOP_WIDTH 10
@@ -263,7 +263,7 @@ void physics_update(void){
 }
 void shoot_logic(void){
     if(bball.is_held && bball.shoot_ball){
-        bball.vx = (bball.held_by == 1) ? +4 : -4; 
+        bball.vx = (bball.held_by == 1) ? +2 : -2; 
         bball.vy = 15;
         bball.airborne = true; 
         bball.is_held = false;
@@ -459,6 +459,7 @@ void check_ball_hoop(void){
     }
 }
 void reset_ball(void){
+    draw_ball(BG_COLOR);
     bball.current_point.col = 120; 
     bball.current_point.row = 50; 
     bball.held_by = 0; 
@@ -467,6 +468,8 @@ void reset_ball(void){
     bball.max_height = 50; 
     bball.prev_x = bball.current_point.col; 
     bball.prev_y = bball.current_point.row;
+    bball.airborne = true; 
+    draw_ball(BALL_COLOR);
 }
 void draw_scoreboard(void){
     G8RTOS_WaitSemaphore(&sem_I2CA);
@@ -598,7 +601,7 @@ void Update_Screen(void){
         // check_ball_pos();
         // ball_movement();
         
-        // check_win();
+        check_win();
         if(players[0].is_moved){
             draw_player(&players[0], BG_COLOR, players[0].prev_x);
             draw_player(&players[0], PLAYER1_COLOR, players[0].current_point.col);
@@ -629,14 +632,14 @@ void Update_Screen(void){
         }
 
         if(hoops[0].is_hit){
-            draw_hoop(&hoops[0], 0);
             reset_ball();
             reset_players();
+            draw_hoop(&hoops[0], 0);
         }
         else if(hoops[1].is_hit){
-            draw_hoop(&hoops[1], 1);
             reset_ball();
             reset_players();
+            draw_hoop(&hoops[1], 1);
         }
 
         
