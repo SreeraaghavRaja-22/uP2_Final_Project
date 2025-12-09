@@ -34,6 +34,7 @@
 #define NET_WIDTH 10
 #define BALL_RAD  10
 #define MAX_BOUNCE_HEIGHT 30
+#define GROUND 10
 #define JOY_U_BOUND (2048+250)
 #define JOY_L_BOUND (2048-250)
 
@@ -70,7 +71,12 @@ typedef struct Ball{
     int16_t prev_y;
     bool shoot_ball;
     int16_t max_height;
-    dir ball_dir; 
+    dir ball_dir;
+    int x; 
+    int y; 
+    int vx;
+    int vy;
+    bool airborne;  
 } Ball; 
 
 /*********************************Global Variables**********************************/
@@ -98,6 +104,7 @@ void update_char(Player* playerx, int16_t del_x);
 void update_opp(Player* playerx, int8_t del_x);
 void check_ball_pos(void);
 void boundary_cond(void);
+void physics_update(void);
 void throw_logic(void);
 void bounce_ball(void);
 void ball_movement(void);
@@ -237,6 +244,26 @@ void boundary_cond(void){
     }
     else if(bball.current_point.col >= 220){
         bball.current_point.col = 220;
+    }
+}
+void physics_update(void){
+    if(!bball.airborne)
+        return; 
+    
+    bball.vy -= 1; 
+    bball.current_point.col += bball.vx; 
+    bball.current_point.row += bball.vy;
+
+    if(bball.current_point.row <= GROUND){
+        bball.current_point.row = GROUND;
+
+        bball.vy = -(bball.vy); //
+
+        if(abs(bball.vy) < 1){
+            bball.airborne = false; 
+            bball.vy = 0;
+            bball.vx = 0;
+        }
     }
 }
 void throw_logic(void){
@@ -462,6 +489,8 @@ void Game_Init_BB(void){
             bball.max_height = 50; 
             bball.shoot_ball = false; 
             bball.ball_dir = DOWN;
+            bball.airborne = true;
+            bball.vy = 10; 
 
             hoops[0].score = 0;
             hoops[1].score = 0;
@@ -528,40 +557,50 @@ void Update_Screen(void){
     for(;;){
         bball.prev_x = bball.current_point.col;
         bball.prev_y = bball.current_point.row; 
-        draw_ball(BG_COLOR);
-        update_char(&players[1], del_x);
-        check_ball_pos();
-        ball_movement();
-        check_ball_hoop();
-        check_win();
-        if(players[0].is_moved){
-            draw_player(&players[0], BG_COLOR, players[0].prev_x);
-            draw_player(&players[0], PLAYER1_COLOR, players[0].current_point.col);
-            players[0].is_moved = false;
-        }
-        if(players[1].is_moved){
-            draw_player(&players[1], BG_COLOR, players[1].prev_x);
-            draw_player(&players[1], PLAYER2_COLOR, players[1].current_point.col);
-            players[1].is_moved = false;
-        }
 
-        if(hoops[0].is_hit){
-            draw_hoop(&hoops[0], 0);
-            reset_ball();
-            reset_players();
-        }
-        else if(hoops[1].is_hit){
-            draw_hoop(&hoops[1], 1);
-            reset_ball();
-           reset_players();
-        }
+        // update_char(&players[1], del_x);
+        // check_ball_pos();
+        // ball_movement();
+        // check_ball_hoop();
+        // check_win();
+        // if(players[0].is_moved){
+        //     draw_player(&players[0], BG_COLOR, players[0].prev_x);
+        //     draw_player(&players[0], PLAYER1_COLOR, players[0].current_point.col);
+        //     players[0].is_moved = false;
+        // }
+        // if(players[1].is_moved){
+        //     draw_player(&players[1], BG_COLOR, players[1].prev_x);
+        //     draw_player(&players[1], PLAYER2_COLOR, players[1].current_point.col);
+        //     players[1].is_moved = false;
+        // }
 
-        draw_ball(BALL_COLOR);
-        update_score();
+        // if(hoops[0].is_hit){
+        //     draw_hoop(&hoops[0], 0);
+        //     reset_ball();
+        //     reset_players();
+        // }
+        // else if(hoops[1].is_hit){
+        //     draw_hoop(&hoops[1], 1);
+        //     reset_ball();
+        //    reset_players();
+        // }
+
+        if(bball.airborne){
+            draw_ball(BG_COLOR);
+            physics_update();
+            draw_ball(BALL_COLOR);
+        }
 
         G8RTOS_WaitSemaphore(&sem_UART);
-        UARTprintf("Player Score = %d\n\nOpponent Score: %d\n\n", hoops[0].score, hoops[1].score);
+        UARTprintf("Ball Coordinates: (%d, %d)\n\n", bball.current_point.col, bball.current_point.row);
         G8RTOS_SignalSemaphore(&sem_UART);
+
+
+        update_score();
+
+        // G8RTOS_WaitSemaphore(&sem_UART);
+        // UARTprintf("Player Score = %d\n\nOpponent Score: %d\n\n", hoops[0].score, hoops[1].score);
+        // G8RTOS_SignalSemaphore(&sem_UART);
 
         sleep(5);
     }
