@@ -446,9 +446,9 @@ void Game_Init_BB(void){
             if(display_start){
                 G8RTOS_WaitSemaphore(&sem_SPIA);
                 ST7789_Fill(ST7789_BLUE);
-                ST7789_DrawStringStatic("WELCOME TO NBA 67K!", ST7789_WHITE, 20, 140);
-                ST7789_DrawStringStatic("Press Joystick Button", ST7789_WHITE, 0, 120);
-                ST7789_DrawStringStatic("to start the game!", ST7789_WHITE, 0, 100);
+                ST7789_DrawStringStatic("WELCOME TO NBA 67K!", ST7789_WHITE, 20, 160);
+                ST7789_DrawStringStatic("Press Joystick Button", ST7789_WHITE, 5, 120);
+                ST7789_DrawStringStatic("to start the game!", ST7789_WHITE, 20, 100);
                 G8RTOS_SignalSemaphore(&sem_SPIA);
                 display_start = false; 
             }
