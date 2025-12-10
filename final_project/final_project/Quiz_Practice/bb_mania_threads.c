@@ -23,7 +23,7 @@
 #define NET_COLOR ST7789_WHITE
 #define SCOREBOARD_COLOR ST7789_LIGHTBL
 #define SCOREBOARD_HEIGHT 40
-#define SCORE_WIN_COUNT 7 
+#define SCORE_WIN_COUNT 11 
 #define PLAYER_WIDTH 10
 #define PLAYER_HEIGHT 50
 #define HOOP_WIDTH 10
@@ -480,31 +480,42 @@ void check_ball_hoop(void){
         if(bball.current_point.row <= (NET_HEIGHT + NET_WIDTH) && bball.current_point.row >= NET_HEIGHT){
             if(bball.vy < 0){
                 hoops[0].prev_score = hoops[0].score;
-                hoops[0].score++;
-                hoops[0].is_hit = true; 
-                bball.airborne = false; 
-                bball.vx = 0; 
-                bball.vy = 0; 
-            }    
-        }
+                if(players[1].current_point.col > 60){
+                    hoops[0].score += 2;
+                }
+                else if(players[1].current_point.col <= 60){
+                    hoops[0].score++;
+                }       
+            }
+            hoops[0].is_hit = true; 
+            bball.airborne = false; 
+            bball.vx = 0; 
+            bball.vy = 0; 
+        }    
     }
     
     if(bball.current_point.col >= X_MAX - HOOP_WIDTH - NET_LENGTH && bball.current_point.col <= X_MAX - HOOP_WIDTH){
         if(bball.current_point.row <= (NET_HEIGHT + NET_WIDTH) && bball.current_point.row >= NET_HEIGHT){
             if(bball.vy < 0){
                 hoops[1].score = hoops[1].prev_score;
-                hoops[1].score++;
-                hoops[1].is_hit = true;
-                bball.airborne = false; 
-                bball.vx = 0; 
-                bball.vy = 0; 
-            }    
-        }
+                if(players[0].current_point.col + PLAYER_WIDTH < 170){
+                    hoops[1].score += 2;
+                }
+                else if(players[0].current_point.col + PLAYER_WIDTH >= 170){
+                    hoops[1].score++;
+                }   
+            }
+            hoops[1].is_hit = true;
+            bball.airborne = false; 
+            bball.vx = 0; 
+            bball.vy = 0; 
+        }    
     }
 }
+
 void reset_ball(void){
     draw_ball(BG_COLOR);
-    bball.current_point.col = 120; 
+    bball.current_point.col = 115; 
     bball.current_point.row = 50; 
     bball.held_by = 0; 
     bball.is_held = false; 
@@ -521,7 +532,7 @@ void draw_scoreboard(void){
     G8RTOS_SignalSemaphore(&sem_I2CA);
 }
 void check_win(void){
-    if(hoops[0].score == SCORE_WIN_COUNT || hoops[1].score == SCORE_WIN_COUNT){
+    if(hoops[0].score >= SCORE_WIN_COUNT || hoops[1].score >= SCORE_WIN_COUNT){
         game_over = true; 
     }
 }
@@ -532,8 +543,8 @@ void update_score(void){
         draw_scoreboard();
         ST7789_DrawStringStatic("MJ: ", BG_COLOR, 10, 240);
         ST7789_DrawStringStatic("LBJ: ", BG_COLOR, 140, 240);
-        ST7789_DrawStringStatic(citoa(hoops[1].score, P1_BUFF, 10), BG_COLOR, 90, 240);
-        ST7789_DrawStringStatic(citoa(hoops[0].score, P2_BUFF, 10), BG_COLOR, 220, 240);
+        ST7789_DrawStringStatic(citoa(hoops[1].score, P1_BUFF, 10), BG_COLOR, 80, 240);
+        ST7789_DrawStringStatic(citoa(hoops[0].score, P2_BUFF, 10), BG_COLOR, 210, 240);
         G8RTOS_SignalSemaphore(&sem_SPIA);      
     }
     if(hoops[1].score > hoops[1].prev_score){
@@ -568,7 +579,7 @@ void Game_Init_BB(void){
         }
         if(game_begin){
             ST7789_Fill(ST7789_BLACK);
-            bball.current_point.col = 120;
+            bball.current_point.col = 115;
             bball.current_point.row = 50;
             bball.max_height = 50; 
             bball.shoot_ball = false; 
@@ -584,6 +595,11 @@ void Game_Init_BB(void){
             reset_position(&players[1], 1);
             G8RTOS_WaitSemaphore(&sem_SPIA);
             ST7789_DrawRectangle(0, 0, X_MAX, 10, GROUND_COLOR);
+            ST7789_DrawRectangle(30, 0, 10, 10, ST7789_WHITE);
+            ST7789_DrawRectangle(60, 0, 10, 10, ST7789_WHITE);
+            ST7789_DrawRectangle(115, 0, 10, 10, ST7789_WHITE);
+            ST7789_DrawRectangle(170, 0, 10, 10, ST7789_WHITE);
+            ST7789_DrawRectangle(200, 0, 10, 10, ST7789_WHITE);
             G8RTOS_SignalSemaphore(&sem_SPIA);
             draw_player(&players[0], PLAYER1_COLOR, players[0].current_point.col);
             draw_player(&players[1], PLAYER2_COLOR, players[1].current_point.col);
@@ -595,8 +611,8 @@ void Game_Init_BB(void){
             G8RTOS_WaitSemaphore(&sem_SPIA);
             ST7789_DrawStringStatic("MJ: ", BG_COLOR, 10, 240);
             ST7789_DrawStringStatic("LBJ: ", BG_COLOR, 140, 240);
-            ST7789_DrawStringStatic(citoa(hoops[0].score, P1_BUFF, 10), BG_COLOR, 90, 240);
-            ST7789_DrawStringStatic(citoa(hoops[1].score, P2_BUFF, 10), BG_COLOR, 220, 240);
+            ST7789_DrawStringStatic(citoa(hoops[0].score, P1_BUFF, 10), BG_COLOR, 80, 240);
+            ST7789_DrawStringStatic(citoa(hoops[1].score, P2_BUFF, 10), BG_COLOR, 210, 240);
             G8RTOS_SignalSemaphore(&sem_SPIA);
 
             bball.prev_x = bball.current_point.col;
