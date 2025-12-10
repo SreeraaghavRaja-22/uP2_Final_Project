@@ -22,6 +22,7 @@
 #define BALL_COLOR ST7789_ORANGE
 #define NET_COLOR ST7789_WHITE
 #define SCOREBOARD_COLOR ST7789_LIGHTBL
+#define TEXT_COLOR ST7789_BLACK
 #define SCOREBOARD_HEIGHT 40
 #define SCORE_WIN_COUNT 11 
 #define PLAYER_WIDTH 10
@@ -99,7 +100,8 @@ dir p2 = LEFT;
 
 extern const uint16_t ballSprite[10][10];
 extern const uint16_t netSprite[10][20];
-extern const uint16_t michael_jordan[50][10];
+extern const uint16_t lebronJamesSprite[50][10];
+extern const uint16_t michaelJordanSprite[50][10];
 
 
 /*********************************** FUNCTIONS ********************************/
@@ -126,6 +128,9 @@ void draw_scoreboard(void);
 void check_win(void);
 void update_score(void);
 void draw_ball_sprite(void);
+void draw_player0_sprite(void);
+void draw_player1_sprite(void);
+void draw_start_screen(void);
 
 
 // Definitions
@@ -139,8 +144,20 @@ void draw_player0_sprite(void){
     G8RTOS_WaitSemaphore(&sem_SPIA);
     for(int i = 0; i < PLAYER_HEIGHT; i++){
         for(int j = 0; j < PLAYER_WIDTH; j++){
-            if(michael_jordan[PLAYER_HEIGHT - 1 - j][i] != ST7789_BLACK){
-                ST7789_DrawPixel(players[1].current_point.col + j, players[1].current_point.row + i, michael_jordan[PLAYER_HEIGHT - 1 - j][i]);
+            if(michaelJordanSprite[50 - 1 - i][j] != BG_COLOR){
+                ST7789_DrawPixel(players[0].current_point.col + j, players[0].current_point.row + i, michaelJordanSprite[50 - 1 - i][j]);
+            }
+        }
+    }
+    G8RTOS_SignalSemaphore(&sem_SPIA);
+}
+
+void draw_player1_sprite(void){
+    G8RTOS_WaitSemaphore(&sem_SPIA);
+    for(int i = 0; i < PLAYER_HEIGHT; i++){
+        for(int j = 0; j < PLAYER_WIDTH; j++){
+            if(lebronJamesSprite[50 - 1 - i][j] != BG_COLOR){
+                ST7789_DrawPixel(players[1].current_point.col + j, players[1].current_point.row + i, lebronJamesSprite[50 - 1 - i][j]);
             }
         }
     }
@@ -185,7 +202,7 @@ void draw_hoop_sprite(Hoop* hoopx, uint8_t h_inx){
     
     for(int i = 0; i < NET_WIDTH; i++){
         for(int j = 0; j < NET_LENGTH; j++){
-           if(netSprite[NET_WIDTH - 1 - i][j] != ST7789_BLACK){
+           if(netSprite[NET_WIDTH - 1 - i][j] != BG_COLOR){
             ST7789_DrawPixel(net_x + j, NET_HEIGHT + i, netSprite[NET_WIDTH - 1 - i][j]);
            }
         }
@@ -202,7 +219,7 @@ void draw_ball_sprite(void){
     G8RTOS_WaitSemaphore(&sem_SPIA);
     for(int i = 0; i < BALL_RAD; i++){
         for(int j = 0; j < BALL_RAD; j++){
-            if(ballSprite[BALL_RAD - 1 - j][i] != ST7789_BLACK){
+            if(ballSprite[BALL_RAD - 1 - j][i] != BG_COLOR){
                 ST7789_DrawPixel(bball.current_point.col + j, bball.current_point.row + i, ballSprite[BALL_RAD - 1 - j][i]);
             }
         }
@@ -229,19 +246,20 @@ void reset_players(void){
     draw_player(&players[1], BG_COLOR, players[1].prev_x);
     reset_position(&players[0], 0);
     reset_position(&players[1], 1);
-    draw_player(&players[1], PLAYER2_COLOR, players[1].current_point.col);
+    // draw_player(&players[1], PLAYER2_COLOR, players[1].current_point.col);
+    draw_player1_sprite();
 }
 void update_char(Player* playerx, int16_t del_x){
     playerx->prev_x = playerx->current_point.col;
     if(del_x > JOY_U_BOUND){
         if(playerx->current_point.col - 10 > 10){
-            playerx->current_point.col--;
+            playerx->current_point.col-=2;
             playerx->is_moved = true;
         }
     }
     else if(del_x < JOY_L_BOUND){
         if(playerx->current_point.col + 10 < X_MAX - 20){
-            playerx ->current_point.col++;
+            playerx ->current_point.col+=2;
             playerx->is_moved = true; 
         }
     }
@@ -558,22 +576,42 @@ void update_score(void){
         hoops[0].prev_score = hoops[0].score;
         G8RTOS_WaitSemaphore(&sem_SPIA);
         draw_scoreboard();
-        ST7789_DrawStringStatic("MJ: ", BG_COLOR, 10, 240);
-        ST7789_DrawStringStatic("LBJ: ", BG_COLOR, 140, 240);
-        ST7789_DrawStringStatic(citoa(hoops[1].score, P1_BUFF, 10), BG_COLOR, 80, 240);
-        ST7789_DrawStringStatic(citoa(hoops[0].score, P2_BUFF, 10), BG_COLOR, 210, 240);
+        ST7789_DrawStringStatic("MJ: ", TEXT_COLOR, 10, 240);
+        ST7789_DrawStringStatic("LBJ: ", TEXT_COLOR, 140, 240);
+        ST7789_DrawStringStatic(citoa(hoops[1].score, P1_BUFF, 10), TEXT_COLOR, 80, 240);
+        ST7789_DrawStringStatic(citoa(hoops[0].score, P2_BUFF, 10), TEXT_COLOR, 210, 240);
         G8RTOS_SignalSemaphore(&sem_SPIA);      
     }
     if(hoops[1].score > hoops[1].prev_score){
         hoops[1].prev_score = hoops[1].score;
         G8RTOS_WaitSemaphore(&sem_SPIA);
         draw_scoreboard();
-        ST7789_DrawStringStatic("MJ: ", BG_COLOR, 10, 240);
-        ST7789_DrawStringStatic("LBJ: ", BG_COLOR, 140, 240);
-        ST7789_DrawStringStatic(citoa(hoops[1].score, P1_BUFF, 10), BG_COLOR, 90, 240);
-        ST7789_DrawStringStatic(citoa(hoops[0].score, P2_BUFF, 10), BG_COLOR, 220, 240);
+        ST7789_DrawStringStatic("MJ: ", TEXT_COLOR, 10, 240);
+        ST7789_DrawStringStatic("LBJ: ", TEXT_COLOR, 140, 240);
+        ST7789_DrawStringStatic(citoa(hoops[1].score, P1_BUFF, 10), TEXT_COLOR, 90, 240);
+        ST7789_DrawStringStatic(citoa(hoops[0].score, P2_BUFF, 10), TEXT_COLOR, 220, 240);
         G8RTOS_SignalSemaphore(&sem_SPIA); 
     }
+}
+
+void draw_start_screen(void){
+    G8RTOS_WaitSemaphore(&sem_SPIA);
+    ST7789_Fill(ST7789_BLUE);
+    ST7789_DrawStringStatic("WELCOME TO NBA 67K!", ST7789_WHITE, 20, 160);
+    ST7789_DrawStringStatic("Press Joystick Button", ST7789_WHITE, 5, 120);
+    ST7789_DrawStringStatic("to start the game!", ST7789_WHITE, 20, 100);
+    bball.current_point.row = 180;
+    for(int i = 1; i < 8; i++){
+        bball.current_point.col = i * 30;
+        draw_ball_sprite();
+    }
+
+    bball.current_point.row = 60;
+    for(int i = 1; i < 8; i++){
+        bball.current_point.col = i * 30;
+        draw_ball_sprite();
+    }        
+    G8RTOS_SignalSemaphore(&sem_SPIA);
 }
 /*************************************Threads***************************************/
 // Background Threads 
@@ -585,17 +623,12 @@ void Game_Init_BB(void){
     for(;;){
         if(start_screen){
             if(display_start){
-                G8RTOS_WaitSemaphore(&sem_SPIA);
-                ST7789_Fill(ST7789_BLUE);
-                ST7789_DrawStringStatic("WELCOME TO NBA 67K!", ST7789_WHITE, 20, 160);
-                ST7789_DrawStringStatic("Press Joystick Button", ST7789_WHITE, 5, 120);
-                ST7789_DrawStringStatic("to start the game!", ST7789_WHITE, 20, 100);
-                G8RTOS_SignalSemaphore(&sem_SPIA);
+                draw_start_screen();
                 display_start = false; 
             }  
         }
         if(game_begin){
-            ST7789_Fill(ST7789_BLACK);
+            ST7789_Fill(BG_COLOR);
             bball.current_point.col = 115;
             bball.current_point.row = 50;
             bball.max_height = 50; 
@@ -618,18 +651,17 @@ void Game_Init_BB(void){
             ST7789_DrawRectangle(170, 0, 10, 10, ST7789_WHITE);
             ST7789_DrawRectangle(200, 0, 10, 10, ST7789_WHITE);
             G8RTOS_SignalSemaphore(&sem_SPIA);
-            draw_player(&players[0], PLAYER1_COLOR, players[0].current_point.col);
-            //draw_player(&players[1], PLAYER2_COLOR, players[1].current_point.col);
             draw_player0_sprite();
+            draw_player1_sprite();
             draw_hoop_sprite(&hoops[0], 0);
             draw_hoop_sprite(&hoops[1], 1);
             draw_ball_sprite();
             draw_scoreboard();
             G8RTOS_WaitSemaphore(&sem_SPIA);
-            ST7789_DrawStringStatic("MJ: ", BG_COLOR, 10, 240);
-            ST7789_DrawStringStatic("LBJ: ", BG_COLOR, 140, 240);
-            ST7789_DrawStringStatic(citoa(hoops[0].score, P1_BUFF, 10), BG_COLOR, 80, 240);
-            ST7789_DrawStringStatic(citoa(hoops[1].score, P2_BUFF, 10), BG_COLOR, 210, 240);
+            ST7789_DrawStringStatic("MJ: ", TEXT_COLOR, 10, 240);
+            ST7789_DrawStringStatic("LBJ: ", TEXT_COLOR, 140, 240);
+            ST7789_DrawStringStatic(citoa(hoops[0].score, P1_BUFF, 10), TEXT_COLOR, 80, 240);
+            ST7789_DrawStringStatic(citoa(hoops[1].score, P2_BUFF, 10), TEXT_COLOR, 210, 240);
             G8RTOS_SignalSemaphore(&sem_SPIA);
 
             bball.prev_x = bball.current_point.col;
@@ -657,7 +689,7 @@ void Game_Init_BB(void){
                 ST7789_DrawStringStatic("AIR JORDAN WON!", ST7789_WHITE, 10, 140);
             }
             else{
-                ST7789_DrawStringStatic("RESTART?", ST7789_WHITE, 10, 140);
+                ST7789_DrawStringStatic("RESTART? Press JS!", ST7789_WHITE, 10, 140);
             }
 
             if(go_start){
@@ -672,55 +704,54 @@ void Game_Init_BB(void){
 }
 void Update_Screen(void){
     for(;;){
-        // bball.prev_x = bball.current_point.col;
-        // bball.prev_y = bball.current_point.row; 
+        bball.prev_x = bball.current_point.col;
+        bball.prev_y = bball.current_point.row; 
 
-        // update_char(&players[1], del_x);
+        update_char(&players[1], del_x);
         
-        // check_win();
+        check_win();
 
-        // if(players[0].is_moved){
-        //     draw_player(&players[0], BG_COLOR, players[0].prev_x);
-        //     draw_player(&players[0], PLAYER1_COLOR, players[0].current_point.col);
-        //     // draw_player0_sprite();
-        //     players[0].is_moved = false;
-        // }
-        // if(players[1].is_moved){
-        //     draw_player(&players[1], BG_COLOR, players[1].prev_x);
-        //     draw_player(&players[1], PLAYER2_COLOR, players[1].current_point.col);
-        //     players[1].is_moved = false;
-        // }
+        if(players[0].is_moved){
+            draw_player(&players[0], BG_COLOR, players[0].prev_x);
+            draw_player0_sprite();
+            players[0].is_moved = false;
+        }
+        if(players[1].is_moved){
+            draw_player(&players[1], BG_COLOR, players[1].prev_x);
+            draw_player1_sprite();
+            players[1].is_moved = false;
+        }
 
-        // if(bball.airborne){
-        //     draw_ball(BG_COLOR);
-        //     physics_update();
-        //     boundary_cond();
-        //     check_ball_hoop();
-        //     draw_ball_sprite();
-        // }
-        // else if(bball.is_held){
-        //     draw_ball(BG_COLOR);
-        //     pickup_ball();
-        //     shoot_logic();
-        //     boundary_cond();
-        //     draw_ball_sprite();
-        // }
-        // else{
-        //     pickup_ball();
-        // }
+        if(bball.airborne){
+            draw_ball(BG_COLOR);
+            physics_update();
+            boundary_cond();
+            check_ball_hoop();
+            draw_ball_sprite();
+        }
+        else if(bball.is_held){
+            draw_ball(BG_COLOR);
+            pickup_ball();
+            shoot_logic();
+            boundary_cond();
+            draw_ball_sprite();
+        }
+        else{
+            pickup_ball();
+        }
 
-        // if(hoops[0].is_hit){
-        //     reset_ball();
-        //     reset_players();
-        //     draw_hoop_sprite(&hoops[0], 0);
-        // }
-        // else if(hoops[1].is_hit){
-        //     reset_ball();
-        //     reset_players();
-        //     draw_hoop_sprite(&hoops[1], 1);
-        // }
+        if(hoops[0].is_hit){
+            reset_ball();
+            reset_players();
+            draw_hoop_sprite(&hoops[0], 0);
+        }
+        else if(hoops[1].is_hit){
+            reset_ball();
+            reset_players();
+            draw_hoop_sprite(&hoops[1], 1);
+        }
 
-        // update_score();
+        update_score();
 
         sleep(5);
     }
