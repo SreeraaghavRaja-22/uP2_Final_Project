@@ -30,7 +30,7 @@
 #define HOOP_HEIGHT 90
 #define NET_LENGTH 20
 #define NET_HEIGHT 70
-#define NET_WIDTH 10
+#define NET_WIDTH 20
 #define BALL_RAD  10
 #define MAX_BOUNCE_HEIGHT 30
 #define GROUND 10
@@ -92,13 +92,15 @@ static uint8_t slow = 0;
 char P1_BUFF[32];
 char P2_BUFF[32];
 
-extern const uint16_t ballsprite10x10;
+extern const uint16_t ballSprite[10][10];
+extern const uint16_t netSprite[10][20];
 
 
 /*********************************** FUNCTIONS ********************************/
 // Prototypes
 void draw_player(Player* playerx, int16_t color, int16_t x_pos);
 void draw_hoop(Hoop* hoopx, uint8_t h_inx);
+void draw_hoop_sprite(Hoop* hoopx, uint8_t h_inx);
 void draw_ball(int16_t color);
 void reset_position(Player* playerx, uint8_t p_inx);
 void reset_players(void);
@@ -145,17 +147,49 @@ void draw_hoop(Hoop* hoopx, uint8_t h_inx){
     ST7789_DrawRectangle(net_x, NET_HEIGHT, NET_LENGTH, NET_WIDTH, NET_COLOR);
     G8RTOS_SignalSemaphore(&sem_SPIA);
 }
+void draw_hoop_sprite(Hoop* hoopx, uint8_t h_inx){
+    int16_t net_x = 0;
+    if(h_inx == 0){
+        hoopx->current_point.row = 10; 
+        hoopx->current_point.col = 0; 
+        hoopx->is_hit = false;
+        net_x = hoopx->current_point.col + HOOP_WIDTH;
+    }
+    else if(h_inx == 1){
+        hoopx->current_point.row = 10; 
+        hoopx->current_point.col = 230; 
+        hoopx->is_hit = false;
+        net_x = hoopx->current_point.col - NET_LENGTH;
+    }
+
+    G8RTOS_WaitSemaphore(&sem_SPIA);
+    ST7789_DrawRectangle(hoopx->current_point.col, hoopx->current_point.row, HOOP_WIDTH, HOOP_HEIGHT, ST7789_GRAY);
+    
+    for(int i = 0; i < NET_WIDTH; i++){
+        for(int j = 0; j < NET_LENGTH; j++){
+           if(netSprite[NET_LENGTH - 1 - i][j] != ST7789_BLACK){
+            ST7789_DrawPixel(net_x + j, NET_HEIGHT + i, netSprite[NET_LENGTH - 1 - i][j]);
+           }
+        }
+    }
+    G8RTOS_SignalSemaphore(&sem_SPIA);
+}
+
 void draw_ball(int16_t color){
     G8RTOS_WaitSemaphore(&sem_SPIA);
     ST7789_DrawRectangle(bball.current_point.col, bball.current_point.row, BALL_RAD, BALL_RAD, color);
     G8RTOS_SignalSemaphore(&sem_SPIA);
 }
 void draw_ball_sprite(void){
+    G8RTOS_WaitSemaphore(&sem_SPIA);
     for(int i = 0; i < BALL_RAD; i++){
         for(int j = 0; j < BALL_RAD; j++){
-            ST7789_DrawPixel(bball.current_point.col + j, bball.current_point.row + i, ballsprite10x10[j][i]);
+            if(ballSprite[BALL_RAD - 1 - j][i] != ST7789_BLACK){
+                ST7789_DrawPixel(bball.current_point.col + j, bball.current_point.row + i, ballSprite[BALL_RAD - 1 - j][i]);
+            }
         }
     }
+    G8RTOS_SignalSemaphore(&sem_SPIA);
 }
 void reset_position(Player* playerx, uint8_t p_inx){
     if(p_inx == 0){
@@ -553,8 +587,8 @@ void Game_Init_BB(void){
             G8RTOS_SignalSemaphore(&sem_SPIA);
             draw_player(&players[0], PLAYER1_COLOR, players[0].current_point.col);
             draw_player(&players[1], PLAYER2_COLOR, players[1].current_point.col);
-            draw_hoop(&hoops[0], 0);
-            draw_hoop(&hoops[1], 1);
+            draw_hoop_sprite(&hoops[0], 0);
+            draw_hoop_sprite(&hoops[1], 1);
             // draw_ball(ST7789_ORANGE);
             draw_ball_sprite();
             draw_scoreboard();
@@ -629,14 +663,14 @@ void Update_Screen(void){
             physics_update();
             boundary_cond();
             check_ball_hoop();
-            draw_ball(BALL_COLOR);
+            draw_ball_sprite();
         }
         else if(bball.is_held){
             draw_ball(BG_COLOR);
             pickup_ball();
             shoot_logic();
             boundary_cond();
-            draw_ball(BALL_COLOR);
+            draw_ball_sprite();
         }
         else{
             pickup_ball();
@@ -645,12 +679,12 @@ void Update_Screen(void){
         if(hoops[0].is_hit){
             reset_ball();
             reset_players();
-            draw_hoop(&hoops[0], 0);
+            draw_hoop_sprite(&hoops[0], 0);
         }
         else if(hoops[1].is_hit){
             reset_ball();
             reset_players();
-            draw_hoop(&hoops[1], 1);
+            draw_hoop_sprite(&hoops[1], 1);
         }
 
         
