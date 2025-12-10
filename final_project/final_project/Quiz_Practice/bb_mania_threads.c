@@ -11,11 +11,10 @@
 #include <time.h>
 #include "bb_mania_threads.h"
 #include "SPI_string.h"
-
+#include "bitmap.h"
 /************************************Includes***************************************/
 
 /*************************************Defines***************************************/
-
 #define PLAYER1_COLOR ST7789_GREEN
 #define PLAYER2_COLOR ST7789_BLUE
 #define GROUND_COLOR ST7789_YELLOW
@@ -93,6 +92,9 @@ static uint8_t slow = 0;
 char P1_BUFF[32];
 char P2_BUFF[32];
 
+extern const uint16_t ballsprite10x10;
+
+
 /*********************************** FUNCTIONS ********************************/
 // Prototypes
 void draw_player(Player* playerx, int16_t color, int16_t x_pos);
@@ -115,6 +117,7 @@ void reset_ball(void);
 void draw_scoreboard(void);
 void check_win(void);
 void update_score(void);
+void draw_ball_sprite(void);
 
 
 // Definitions
@@ -146,6 +149,13 @@ void draw_ball(int16_t color){
     G8RTOS_WaitSemaphore(&sem_SPIA);
     ST7789_DrawRectangle(bball.current_point.col, bball.current_point.row, BALL_RAD, BALL_RAD, color);
     G8RTOS_SignalSemaphore(&sem_SPIA);
+}
+void draw_ball_sprite(void){
+    for(int i = 0; i < BALL_RAD; i++){
+        for(int j = 0; j < BALL_RAD; j++){
+            ST7789_DrawPixel(bball.current_point.col + j, bball.current_point.row + i, ballsprite10x10[j][i]);
+        }
+    }
 }
 void reset_position(Player* playerx, uint8_t p_inx){
     if(p_inx == 0){
@@ -545,7 +555,8 @@ void Game_Init_BB(void){
             draw_player(&players[1], PLAYER2_COLOR, players[1].current_point.col);
             draw_hoop(&hoops[0], 0);
             draw_hoop(&hoops[1], 1);
-            draw_ball(ST7789_ORANGE);
+            // draw_ball(ST7789_ORANGE);
+            draw_ball_sprite();
             draw_scoreboard();
             G8RTOS_WaitSemaphore(&sem_SPIA);
             ST7789_DrawStringStatic("MJ: ", BG_COLOR, 10, 240);

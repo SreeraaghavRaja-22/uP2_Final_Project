@@ -91,6 +91,8 @@
 #define ST7789_ORANGE               0xFD80
 #define ST7789_YELLOW               0xFF00
 #define ST7789_LIGHTBL              0x0FFF
+#define ST7789_GRAY                 0x4208
+#define ST7789_LORANGE              0xFC00
 
 /*************************************Defines***************************************/
 
