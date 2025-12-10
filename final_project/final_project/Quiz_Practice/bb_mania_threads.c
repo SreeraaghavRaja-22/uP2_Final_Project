@@ -40,7 +40,6 @@
 
 /*************************************Defines***************************************/
 // I AM PLAYER 2
-
 /*********************************Global Variables**********************************/
 // define direction 
 typedef enum dir{
@@ -49,7 +48,6 @@ typedef enum dir{
     UP = 3, 
     DOWN = 4
 } dir;
-// struct for the point a player / object is at 
 typedef struct Point{
     int16_t row; 
     int16_t col;
@@ -95,19 +93,17 @@ Ball bball;
 static uint8_t slow = 0; 
 char P1_BUFF[32];
 char P2_BUFF[32];
-dir p1 = RIGHT; 
-dir p2 = LEFT;
 
 extern const uint16_t ballSprite[10][10];
 extern const uint16_t netSprite[10][20];
 extern const uint16_t lebronJamesSprite[50][10];
 extern const uint16_t michaelJordanSprite[50][10];
 
-
 /*********************************** FUNCTIONS ********************************/
 // Prototypes
 void draw_player(Player* playerx, int16_t color, int16_t x_pos);
-void draw_hoop(Hoop* hoopx, uint8_t h_inx);
+void draw_player0_sprite(void);
+void draw_player1_sprite(void);
 void draw_hoop_sprite(Hoop* hoopx, uint8_t h_inx);
 void draw_ball(int16_t color);
 void reset_position(Player* playerx, uint8_t p_inx);
@@ -119,19 +115,13 @@ void boundary_cond(void);
 void physics_update(void);
 void shoot_logic(void);
 void pickup_ball(void);
-void throw_logic(void);
-void bounce_ball(void);
-void ball_movement(void);
 void check_ball_hoop(void);
 void reset_ball(void);
 void draw_scoreboard(void);
 void check_win(void);
 void update_score(void);
 void draw_ball_sprite(void);
-void draw_player0_sprite(void);
-void draw_player1_sprite(void);
 void draw_start_screen(void);
-
 
 // Definitions
 void draw_player(Player* playerx, int16_t color, int16_t x_pos){
@@ -139,7 +129,6 @@ void draw_player(Player* playerx, int16_t color, int16_t x_pos){
     ST7789_DrawRectangle(x_pos, (*playerx).current_point.row, PLAYER_WIDTH, PLAYER_HEIGHT, color);
     G8RTOS_SignalSemaphore(&sem_SPIA);
 }
-
 void draw_player0_sprite(void){
     G8RTOS_WaitSemaphore(&sem_SPIA);
     for(int i = 0; i < PLAYER_HEIGHT; i++){
@@ -151,7 +140,6 @@ void draw_player0_sprite(void){
     }
     G8RTOS_SignalSemaphore(&sem_SPIA);
 }
-
 void draw_player1_sprite(void){
     G8RTOS_WaitSemaphore(&sem_SPIA);
     for(int i = 0; i < PLAYER_HEIGHT; i++){
@@ -161,25 +149,6 @@ void draw_player1_sprite(void){
             }
         }
     }
-    G8RTOS_SignalSemaphore(&sem_SPIA);
-}
-void draw_hoop(Hoop* hoopx, uint8_t h_inx){
-    int16_t net_x = 0;
-    if(h_inx == 0){
-        hoopx->current_point.row = 10; 
-        hoopx->current_point.col = 0; 
-        hoopx->is_hit = false;
-        net_x = hoopx->current_point.col + HOOP_WIDTH;
-    }
-    else if(h_inx == 1){
-        hoopx->current_point.row = 10; 
-        hoopx->current_point.col = 230; 
-        hoopx->is_hit = false;
-        net_x = hoopx->current_point.col - NET_LENGTH;
-    }
-    G8RTOS_WaitSemaphore(&sem_SPIA);
-    ST7789_DrawRectangle(hoopx->current_point.col, hoopx->current_point.row, HOOP_WIDTH, HOOP_HEIGHT, ST7789_RED);
-    ST7789_DrawRectangle(net_x, NET_HEIGHT, NET_LENGTH, NET_WIDTH, NET_COLOR);
     G8RTOS_SignalSemaphore(&sem_SPIA);
 }
 void draw_hoop_sprite(Hoop* hoopx, uint8_t h_inx){
@@ -209,7 +178,6 @@ void draw_hoop_sprite(Hoop* hoopx, uint8_t h_inx){
     }
     G8RTOS_SignalSemaphore(&sem_SPIA);
 }
-
 void draw_ball(int16_t color){
     G8RTOS_WaitSemaphore(&sem_SPIA);
     ST7789_DrawRectangle(bball.current_point.col, bball.current_point.row, BALL_RAD, BALL_RAD, color);
@@ -593,7 +561,6 @@ void update_score(void){
         G8RTOS_SignalSemaphore(&sem_SPIA); 
     }
 }
-
 void draw_start_screen(void){
     G8RTOS_WaitSemaphore(&sem_SPIA);
     ST7789_Fill(ST7789_BLUE);
